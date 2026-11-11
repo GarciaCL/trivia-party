@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Trivia Party - Mando Jugador</title>
+  <title>Trivia Party - Mando Móvil</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
@@ -12,50 +12,53 @@
 </head>
 <body>
 
-  <!-- Vista 1: Ingreso de Equipo -->
-  <section id="view-join" class="play-view glass-card glow-pink">
-    <h1 class="play-title">TRIVIA PARTY</h1>
-    <p class="play-subtitle">Elige el nombre de tu equipo</p>
-    <form id="form-join">
-      <input type="text" id="input-team-name" placeholder="Ej: Los Invencibles" maxlength="20" required autocomplete="off">
-      <button type="submit" class="btn btn-join">¡ENTRAR AL JUEGO!</button>
-    </form>
-  </section>
+  <main class="player-container">
+    <!-- Vista de Ingreso de Equipo -->
+    <section id="login-view" class="card glass-card">
+      <h1 class="game-title">TRIVIA PARTY</h1>
+      <p class="subtitle">Ingresa el nombre de tu equipo:</p>
+      <form id="form-join" class="form-join">
+        <input type="text" id="input-team-name" class="input-text" placeholder="Ej: Los Invencibles" maxlength="20" required autocomplete="off">
+        <button type="submit" class="btn btn-join">¡ENTRAR AL JUEGO! 🚀</button>
+      </form>
+    </section>
 
-  <!-- Vista 2: Sala de espera y Botón Buzzer -->
-  <section id="view-buzzer" class="play-view hidden">
-    <header class="team-bar glass-card">
-      <span id="label-team-name" class="team-name">Cargando...</span>
-      <span id="label-team-score" class="team-score">0 pts</span>
-    </header>
+    <!-- Vista de Juego Activo -->
+    <section id="game-view" class="card glass-card hidden">
+      <header class="player-header">
+        <span id="player-team-display" class="badge-team">Equipo</span>
+        <span id="player-score-display" class="badge-score">0 pts</span>
+      </header>
 
-    <div class="buzzer-container">
-      <button id="btn-buzzer" class="buzzer-btn">
-        <span class="buzzer-text">¡ME LA SÉ!</span>
-      </button>
-      <p id="buzzer-status" class="buzzer-hint">Pulsa cuando reconozcas la canción o escena</p>
-    </div>
+      <div class="buzzer-zone">
+        <!-- Buzzer Gigante -->
+        <button id="btn-buzzer" class="btn-buzzer pulse-animation">
+          <span>¡ME LA SÉ!</span>
+        </button>
 
-    <!-- Espacio para banner publicitario reservado -->
-    <div class="ad-slot">Publicidad / Patrocinio</div>
-  </section>
+        <!-- Bloque Modo Host: Hablar en voz alta -->
+        <div id="host-mode-banner" class="locked-banner hidden">
+          <p class="lock-icon">🎤</p>
+          <h2 class="lock-title">¡HABLA EN VOZ ALTA!</h2>
+          <p class="lock-desc">Dile tu respuesta al presentador.</p>
+        </div>
 
-  <!-- Vista 3: Panel de 4 Opciones con Temporizador (Modo Automático) -->
-  <section id="view-options" class="play-view hidden">
-    <div class="timer-wrapper">
-      <div id="timer-bar" class="timer-progress"></div>
-      <span id="timer-text" class="timer-countdown">5s</span>
-    </div>
+        <!-- Botonera de Respuestas (Modo Auto) -->
+        <div id="options-panel" class="options-container hidden">
+          <div class="timer-bar"><div id="timer-progress" class="progress"></div></div>
+          <div id="options-grid" class="options-grid"></div>
+        </div>
 
-    <div id="options-grid" class="options-grid">
-      <button class="opt-btn opt-orange" data-index="0"></button>
-      <button class="opt-btn opt-cyan" data-index="1"></button>
-      <button class="opt-btn opt-yellow" data-index="2"></button>
-      <button class="opt-btn opt-pink" data-index="3"></button>
-    </div>
-  </section>
+        <!-- Banner de Turno Bloqueado para Otros Equipos -->
+        <div id="locked-banner" class="locked-banner hidden">
+          <p class="lock-icon">🔒</p>
+          <h2 id="locked-msg" class="lock-title">¡Turno Bloqueado!</h2>
+          <p id="locked-team-name" class="lock-desc">Otro equipo está respondiendo...</p>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  <!-- Cliente de Socket.io y lógica del jugador -->
   <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="/play/play.js"></script>
 </body>

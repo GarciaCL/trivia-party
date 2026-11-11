@@ -1,101 +1,104 @@
 const socket = io();
 
-// Referencias a vistas del DOM
-const viewJoin = document.getElementById('view-join');
-const viewBuzzer = document.getElementById('view-buzzer');
-const viewOptions = document.getElementById('view-options');
-
-// Elementos de interfaz
+const loginView = document.getElementById('login-view');
+const gameView = document.getElementById('game-view');
 const formJoin = document.getElementById('form-join');
-const inputName = document.getElementById('input-team-name');
-const labelName = document.getElementById('label-team-name');
-const labelScore = document.getElementById('label-team-score');
+const inputTeamName = document.getElementById('input-team-name');
+const playerTeamDisplay = document.getElementById('player-team-display');
+const playerScoreDisplay = document.getElementById('player-score-display');
 const btnBuzzer = document.getElementById('btn-buzzer');
-const buzzerStatus = document.getElementById('buzzer-status');
-const timerBar = document.getElementById('timer-bar');
-const timerText = document.getElementById('timer-text');
-const optButtons = document.querySelectorAll('.opt-btn');
+const optionsPanel = document.getElementById('options-panel');
+const optionsGrid = document.getElementById('options-grid');
+const lockedBanner = document.getElementById('locked-banner');
+const lockedMsg = document.getElementById('locked-msg');
+const lockedTeamName = document.getElementById('locked-team-name');
+const hostModeBanner = document.getElementById('host-mode-banner');
 
-let currentTeam = null;
-let timerInterval = null;
+let myTeam = null;
+let currentOptions = [];
 
-// 1. Envío de formulario para unirse a la sala
 formJoin.addEventListener('submit', (e) => {
   e.preventDefault();
-  const name = inputName.value.trim();
-  if (!name) return;
-  socket.emit('team:join', { name });
+  const name = inputTeamName.value.trim();
+  if (name) socket.emit('team:join', { teamName: name });
 });
 
-socket.on('team:joined', ({ team }) => {
-  currentTeam = team;
-  labelName.textContent = team.name;
-  labelScore.textContent = `${team.score} pts`;
-  viewJoin.classList.add('hidden');
-  viewBuzzer.classList.remove('hidden');
+socket.on('team:joined', (team) => {
+  myTeam = team;
+  playerTeamDisplay.textContent = team.name;
+  loginView.classList.add('hidden');
+  gameView.classList.remove('hidden');
 });
 
-// 2. Pulsar el Buzzer ("¡ME LA SÉ!")
+socket.on('round:options', ({ options }) => { currentOptions = options || []; });
+
+function resetBuzzerView() {
+  btnBuzzer.classList.remove('hidden');
+  btnBuzzer.disabled = false;
+  optionsPanel.classList.add('hidden');
+  lockedBanner.classList.add('hidden');
+  hostModeBanner.classList.add('hidden');
+}
+
+socket.on('round:new', resetBuzzerView);
+
 btnBuzzer.addEventListener('click', () => {
   btnBuzzer.disabled = true;
-  buzzerStatus.textContent = '¡Verificando turno...!';
+  if (navigator.vibrate) navigator.vibrate(200);
   socket.emit('buzzer:press');
 });
 
-// 3. Recepción de las 4 opciones con temporizador (Modo Automático)
-socket.on('round:options', ({ options, timeLimit }) => {
-  viewBuzzer.classList.add('hidden');
-  viewOptions.classList.remove('hidden');
+socket.on('buzzer:locked', ({ teamId, teamName, mode }) => {
+  btnBuzzer.classList.add('hidden');
 
-  options.forEach((optText, index) => {
-    if (optButtons[index]) {
-      optButtons[index].textContent = optText;
-      optButtons[index].onclick = () => sendAnswer(optText);
+  if (myTeam && teamId === myTeam.id) {
+    if (mode === 'host') {
+      // Modo Host: Avisar al usuario que responda de forma oral
+      hostModeBanner.classList.remove('hidden');
+      optionsPanel.classList.add('hidden');
+    } else {
+      // Modo Auto: Mostrar las 4 opciones interactivas
+      optionsPanel.classList.remove('hidden');
+      renderOptions();
     }
-  });
-
-  startTimer(timeLimit);
-});
-
-function startTimer(seconds) {
-  clearInterval(timerInterval);
-  let remaining = seconds;
-  timerBar.style.width = '100%';
-  timerText.textContent = `${remaining}s`;
-
-  timerInterval = setInterval(() => {
-    remaining -= 1;
-    timerText.textContent = `${remaining}s`;
-    timerBar.style.width = `${(remaining / seconds) * 100}%`;
-
-    if (remaining <= 0) {
-      clearInterval(timerInterval);
-      sendAnswer(''); // Tiempo agotado: cuenta como fallo automático
-    }
-  }, 1000);
-}
-
-function sendAnswer(answer) {
-  clearInterval(timerInterval);
-  socket.emit('round:answer', { answer });
-  viewOptions.classList.add('hidden');
-  viewBuzzer.classList.remove('hidden');
-  buzzerStatus.textContent = 'Respuesta enviada. Esperando resultado...';
-}
-
-// 4. Actualización de puntajes y reset de ronda
-socket.on('teams:updated', (teams) => {
-  if (!currentTeam) return;
-  const me = teams.find((t) => t.id === currentTeam.id);
-  if (me) {
-    currentTeam.score = me.score;
-    labelScore.textContent = `${me.score} pts`;
+  } else {
+    // Para todos los demás competidores: pantalla de bloqueo
+    lockedTeamName.textContent = `${teamName} está respondiendo...`;
+    lockedBanner.classList.remove('hidden');
   }
 });
 
-socket.on('round:new', () => {
-  btnBuzzer.disabled = false;
-  buzzerStatus.textContent = '¡Nueva ronda! Pulsa cuando lo sepas';
-  viewOptions.classList.add('hidden');
-  viewBuzzer.classList.remove('hidden');
+function renderOptions() {
+  optionsGrid.innerHTML = '';
+  currentOptions.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      socket.emit('player:answer', { answerIndex: idx });
+      optionsPanel.classList.add('hidden');
+      btnBuzzer.classList.remove('hidden');
+      btnBuzzer.disabled = true;
+    });
+    optionsGrid.appendChild(btn);
+  });
+}
+
+socket.on('round:success', ({ team }) => {
+  if (myTeam && team.id === myTeam.id) myTeam.score = team.score;
+  setTimeout(resetBuzzerView, 1200);
+});
+
+socket.on('round:fail', ({ team }) => {
+  if (myTeam && team.id === myTeam.id) myTeam.score = team.score;
+  setTimeout(resetBuzzerView, 1500);
+});
+
+socket.on('teams:updated', (teams) => {
+  if (!myTeam) return;
+  const updated = teams.find(t => t.id === myTeam.id);
+  if (updated) {
+    myTeam.score = updated.score;
+    playerScoreDisplay.textContent = `${updated.score} pts`;
+  }
 });
