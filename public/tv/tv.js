@@ -62,7 +62,6 @@ btnWrong.addEventListener('click', () => judge('wrong'));
 btnBonus.addEventListener('click', () => judge('correct', 5));
 btnNextRound.addEventListener('click', () => socket.emit('host:next_round'));
 
-// Atajos de teclado para el presentador
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     e.preventDefault();
@@ -94,12 +93,10 @@ socket.on('buzzer:locked', ({ teamName }) => {
   if (player?.pauseVideo) player.pauseVideo();
   alertTeamName.textContent = teamName;
   buzzerBanner.classList.remove('hidden');
-  if (currentMode === 'host') {
-    alertSubtitle.textContent = '🎤 Responde oralmente: [1] Correcto | [2] Fallo | [3] Bonus';
-    hostControls.classList.remove('hidden');
-  } else {
-    alertSubtitle.textContent = 'Respondiendo en su celular (5s)...';
-  }
+  alertSubtitle.textContent = currentMode === 'host'
+    ? '🎤 Responde oralmente: [1] Correcto | [2] Fallo | [3] Bonus'
+    : 'Respondiendo en su celular (5s)...';
+  if (currentMode === 'host') hostControls.classList.remove('hidden');
 });
 
 socket.on('round:success', ({ team, chorusSec }) => {
@@ -113,9 +110,12 @@ socket.on('round:success', ({ team, chorusSec }) => {
 });
 
 socket.on('round:fail', ({ team }) => {
-  alertSubtitle.textContent = `¡FALLÓ! -10 pts para ${team.name} ❌`;
+  alertSubtitle.textContent = `¡FALLÓ! -10 pts para ${team.name} ❌ ¡ROBO DISPONIBLE!`;
   hostControls.classList.add('hidden');
-  setTimeout(() => { buzzerBanner.classList.add('hidden'); player?.playVideo?.(); }, 1500);
+  setTimeout(() => {
+    buzzerBanner.classList.add('hidden');
+    if (player?.playVideo) player.playVideo();
+  }, 1200);
 });
 
 socket.on('teams:updated', (teams) => {

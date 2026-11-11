@@ -35,6 +35,7 @@ socket.on('round:options', ({ options }) => { currentOptions = options || []; })
 function resetBuzzerView() {
   btnBuzzer.classList.remove('hidden');
   btnBuzzer.disabled = false;
+  btnBuzzer.querySelector('span').textContent = '¡ME LA SÉ!';
   optionsPanel.classList.add('hidden');
   lockedBanner.classList.add('hidden');
   hostModeBanner.classList.add('hidden');
@@ -53,16 +54,13 @@ socket.on('buzzer:locked', ({ teamId, teamName, mode }) => {
 
   if (myTeam && teamId === myTeam.id) {
     if (mode === 'host') {
-      // Modo Host: Avisar al usuario que responda de forma oral
       hostModeBanner.classList.remove('hidden');
       optionsPanel.classList.add('hidden');
     } else {
-      // Modo Auto: Mostrar las 4 opciones interactivas
       optionsPanel.classList.remove('hidden');
       renderOptions();
     }
   } else {
-    // Para todos los demás competidores: pantalla de bloqueo
     lockedTeamName.textContent = `${teamName} está respondiendo...`;
     lockedBanner.classList.remove('hidden');
   }
@@ -89,9 +87,27 @@ socket.on('round:success', ({ team }) => {
   setTimeout(resetBuzzerView, 1200);
 });
 
-socket.on('round:fail', ({ team }) => {
+socket.on('round:fail', ({ team, failedTeamId, attemptedTeams = [] }) => {
   if (myTeam && team.id === myTeam.id) myTeam.score = team.score;
-  setTimeout(resetBuzzerView, 1500);
+
+  setTimeout(() => {
+    optionsPanel.classList.add('hidden');
+    hostModeBanner.classList.add('hidden');
+
+    if (myTeam && attemptedTeams.includes(myTeam.id)) {
+      // Este equipo ya falló: queda inhabilitado por el resto de la ronda
+      btnBuzzer.classList.add('hidden');
+      lockedMsg.textContent = '¡Fallaste en esta ronda!';
+      lockedTeamName.textContent = 'Espera la siguiente canción... ❌';
+      lockedBanner.classList.remove('hidden');
+    } else {
+      // Los demás equipos pueden robar el turno
+      lockedBanner.classList.add('hidden');
+      btnBuzzer.classList.remove('hidden');
+      btnBuzzer.disabled = false;
+      btnBuzzer.querySelector('span').textContent = '¡ROBAR PUNTOS! ⚡';
+    }
+  }, 1200);
 });
 
 socket.on('teams:updated', (teams) => {

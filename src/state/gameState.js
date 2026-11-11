@@ -1,75 +1,66 @@
-import { initialItems } from './contentData.js';
-
-// Estado global de la sala en memoria
-export const state = {
-  roomPin: '1234',
-  gameMode: 'auto', // 'auto' (4 opciones) o 'host' (con presentador)
-  contentType: 'music', // 'music' o 'movie'
-  items: [...initialItems],
-  currentIndex: 0,
-  buzzerLockedBy: null, // ID del equipo que ganó el turno del buzzer
-  buzzedTeamsInRound: new Set(), // Equipos que ya fallaron en esta ronda
-  teams: new Map() // socketId -> { id, name, score }
-};
-
-// Registro y gestión de equipos
-export function registerTeam(socketId, name) {
-  const team = {
-    id: socketId,
-    name: name.trim() || `Equipo-${socketId.slice(0, 4)}`,
-    score: 0
+export const GameState = {
+    state: {
+      teams: [],
+      currentItem: null,
+      lockedBy: null,
+      gameMode: 'auto', // 'auto' o 'host'
+      attemptedTeams: [] // IDs de equipos que ya fallaron en la ronda actual
+    },
+  
+    addTeam(id, name) {
+      const existing = this.state.teams.find(t => t.id === id);
+      if (existing) {
+        existing.name = name;
+        return existing;
+      }
+      const newTeam = { id, name, score: 0 };
+      this.state.teams.push(newTeam);
+      return newTeam;
+    },
+  
+    removeTeam(id) {
+      this.state.teams = this.state.teams.filter(t => t.id !== id);
+      if (this.state.lockedBy?.id === id) {
+        this.state.lockedBy = null;
+      }
+    },
+  
+    startNewRound(item) {
+      this.state.currentItem = item;
+      this.state.lockedBy = null;
+      this.state.attemptedTeams = [];
+    },
+  
+    lockBuzzer(teamId) {
+      // Si ya hay alguien respondiendo o el equipo ya intentó y falló, no puede pulsar
+      if (this.state.lockedBy !== null) return null;
+      if (this.state.attemptedTeams.includes(teamId)) return null;
+  
+      const team = this.state.teams.find(t => t.id === teamId);
+      if (team) {
+        this.state.lockedBy = team;
+        return team;
+      }
+      return null;
+    },
+  
+    registerFail(teamId) {
+      if (!this.state.attemptedTeams.includes(teamId)) {
+        this.state.attemptedTeams.push(teamId);
+      }
+      this.state.lockedBy = null;
+    },
+  
+    releaseBuzzer() {
+      this.state.lockedBy = null;
+    },
+  
+    updateScore(teamId, delta) {
+      const team = this.state.teams.find(t => t.id === teamId);
+      if (team) {
+        team.score = Math.max(0, team.score + delta); // No permitimos puntajes negativos
+        return team;
+      }
+      return null;
+    }
   };
-  state.teams.set(socketId, team);
-  return team;
-}
-
-export function removeTeam(socketId) {
-  state.teams.delete(socketId);
-  if (state.buzzerLockedBy === socketId) {
-    state.buzzerLockedBy = null;
-  }
-}
-
-export function getTeamsList() {
-  return Array.from(state.teams.values());
-}
-
-// Lógica de intento de pulsar el Buzzer ("¡ME LA SÉ!")
-export function tryClaimBuzzer(socketId) {
-  // Si alguien ya lo tiene o este equipo ya falló en esta pregunta, se rechaza
-  if (state.buzzerLockedBy !== null) return false;
-  if (state.buzzedTeamsInRound.has(socketId)) return false;
-
-  state.buzzerLockedBy = socketId;
-  state.buzzedTeamsInRound.add(socketId);
-  return true;
-}
-
-export function releaseBuzzer() {
-  state.buzzerLockedBy = null;
-}
-
-// Obtener la pregunta o clip actual
-export function getCurrentItem() {
-  const current = state.items[state.currentIndex];
-  if (!current) return null;
-  return current;
-}
-
-// Pasar a la siguiente ronda
-export function nextRound() {
-  state.buzzerLockedBy = null;
-  state.buzzedTeamsInRound.clear();
-  state.currentIndex = (state.currentIndex + 1) % state.items.length;
-  return getCurrentItem();
-}
-
-// Modificar puntuación de un equipo
-export function updateScore(socketId, deltaPoints) {
-  const team = state.teams.get(socketId);
-  if (team) {
-    team.score += deltaPoints;
-    return team;
-  }
-  return null;
-}

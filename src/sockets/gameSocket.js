@@ -47,11 +47,16 @@ export function initGameSockets(io) {
           team: lockedTeam,
           chorusSec: GameState.state.currentItem?.chorusSec || 0
         });
+        GameState.releaseBuzzer();
       } else {
         GameState.updateScore(lockedTeam.id, -10);
-        io.emit('round:fail', { team: lockedTeam });
+        GameState.registerFail(lockedTeam.id);
+        io.emit('round:fail', {
+          team: lockedTeam,
+          failedTeamId: lockedTeam.id,
+          attemptedTeams: GameState.state.attemptedTeams
+        });
       }
-      GameState.releaseBuzzer();
       io.emit('teams:updated', GameState.state.teams);
     });
 
@@ -66,17 +71,17 @@ export function initGameSockets(io) {
           team: lockedTeam,
           chorusSec: GameState.state.currentItem.chorusSec
         });
+        GameState.releaseBuzzer();
       } else {
         GameState.updateScore(lockedTeam.id, -10);
-        io.emit('round:fail', { team: lockedTeam });
+        GameState.registerFail(lockedTeam.id);
+        io.emit('round:fail', {
+          team: lockedTeam,
+          failedTeamId: lockedTeam.id,
+          attemptedTeams: GameState.state.attemptedTeams
+        });
       }
-      GameState.releaseBuzzer();
       io.emit('teams:updated', GameState.state.teams);
-    });
-
-    socket.on('admin:add_item', (newItem) => {
-      const added = ContentData.addItem(newItem);
-      socket.emit('admin:item_added', added);
     });
 
     socket.on('disconnect', () => {
