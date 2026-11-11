@@ -16,10 +16,10 @@
   <header class="tv-header glass-card">
     <div class="room-badge">SALA PIN: <span id="pin-display">1234</span></div>
     <div class="game-info">
-      <button id="btn-toggle-mode" class="badge btn-mode">MODO: AUTO</button>
+      <button id="btn-toggle-mode" class="badge btn-mode">MODO: AUTO [M]</button>
       <span id="badge-type" class="badge">MÚSICA</span>
     </div>
-    <button id="btn-next-round" class="btn btn-next">SIGUIENTE RONDA ⏭️</button>
+    <button id="btn-next-round" class="btn btn-next">SIGUIENTE RONDA [Espacio] ⏭️</button>
   </header>
 
   <main class="tv-layout">
@@ -45,7 +45,7 @@
           <div id="qr-code"></div>
         </div>
         <p id="lobby-teams-counter" class="lobby-counter">Equipos listos: 0</p>
-        <button id="btn-start-party" class="btn btn-start-game">🎉 ¡YA ESTAMOS TODOS, COMENZAR! 🎉</button>
+        <button id="btn-start-party" class="btn btn-start-game">🎉 ¡YA ESTAMOS TODOS! [Espacio] 🎉</button>
       </div>
 
       <!-- Alerta de Buzzer -->
@@ -55,11 +55,11 @@
         <p id="alert-subtitle" class="alert-sub">Respondiendo en su celular (5s)...</p>
       </div>
 
-      <!-- Controles de Árbitro / Host -->
+      <!-- Controles de Árbitro / Host con Atajos -->
       <div id="host-controls" class="host-panel hidden">
-        <button id="btn-judge-correct" class="btn btn-correct">Luz Verde (+10)</button>
-        <button id="btn-judge-wrong" class="btn btn-wrong">Luz Roja (-10)</button>
-        <button id="btn-judge-bonus" class="btn btn-bonus">Bonus (+5)</button>
+        <button id="btn-judge-correct" class="btn btn-correct">[1] Luz Verde (+10)</button>
+        <button id="btn-judge-wrong" class="btn btn-wrong">[2] Luz Roja (-10)</button>
+        <button id="btn-judge-bonus" class="btn btn-bonus">[3] Bonus (+5)</button>
       </div>
     </section>
 
