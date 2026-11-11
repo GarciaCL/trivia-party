@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trivia Party - Pantalla Central</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="stylesheet" href="/tv/tv.css">
+</head>
+<body>
+
+  <!-- Barra Superior -->
+  <header class="tv-header glass-card">
+    <div class="room-badge">SALA PIN: <span id="pin-display">1234</span></div>
+    <div class="game-info">
+      <span id="badge-mode" class="badge">MODO AUTO</span>
+      <span id="badge-type" class="badge">MÚSICA</span>
+    </div>
+    <button id="btn-next-round" class="btn btn-next">SIGUIENTE RONDA ⏭️</button>
+  </header>
+
+  <main class="tv-layout">
+    <!-- Escenario Multimedia -->
+    <section class="media-stage glass-card glow-cyan">
+      <div id="player-mask" class="video-mask">
+        <div id="youtube-player"></div>
+      </div>
+
+      <!-- Pantalla Visual de Modo Música (Activa durante el juego) -->
+      <div id="music-visualizer" class="music-screen hidden">
+        <div class="sound-wave">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <h2 id="media-status-text" class="stage-text">¡ESCUCHA CON ATENCIÓN!</h2>
+      </div>
+
+      <!-- Lobby de Bienvenida: QR Gigante + Espera de Equipos -->
+      <div id="welcome-lobby" class="lobby-screen">
+        <h1 class="lobby-title">¡ÚNETE A LA TRIVIA!</h1>
+        <p class="lobby-sub">Escanea con la cámara de tu celular</p>
+        <div class="qr-giant-wrapper">
+          <div id="qr-code"></div>
+        </div>
+        <p id="lobby-teams-counter" class="lobby-counter">Equipos listos: 0</p>
+        <button id="btn-start-party" class="btn btn-start-game">🎉 ¡YA ESTAMOS TODOS, COMENZAR! 🎉</button>
+      </div>
+
+      <!-- Alerta de Buzzer -->
+      <div id="buzzer-banner" class="buzzer-alert hidden">
+        <p class="alert-title">¡BUZZER PULSADO!</p>
+        <h1 id="alert-team-name" class="alert-team">Equipo Alfa</h1>
+        <p id="alert-subtitle" class="alert-sub">Respondiendo en su celular (5s)...</p>
+      </div>
+
+      <!-- Controles de Árbitro Host -->
+      <div id="host-controls" class="host-panel hidden">
+        <button id="btn-judge-correct" class="btn btn-correct">Luz Verde (+10)</button>
+        <button id="btn-judge-wrong" class="btn btn-wrong">Luz Roja (-10)</button>
+        <button id="btn-judge-bonus" class="btn btn-bonus">Bonus (+5)</button>
+      </div>
+    </section>
+
+    <!-- Marcador Lateral -->
+    <aside class="leaderboard glass-card glow-pink">
+      <h3 class="leaderboard-title">🏆 EQUIPOS</h3>
+      <ul id="teams-list" class="teams-ranking">
+        <li class="empty-notice">Esperando equipos...</li>
+      </ul>
+      <div class="ad-slot tv-ad">Publicidad / Patrocinio</div>
+    </aside>
+  </main>
+
+  <!-- YouTube API, QR Generator, Socket.io y lógica TV -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/tv/tv.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+:root {
+    --bg-gradient: linear-gradient(135deg, #1a0933 0%, #0d0221 100%);
+    --neon-pink: #ff007f;
+    --neon-cyan: #00f0ff;
+    --neon-yellow: #ffe600;
+    --neon-green: #00ff66;
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --text-main: #ffffff;
+    --text-muted: #b8b0d4;
+    --font-party: 'Poppins', system-ui, -apple-system, sans-serif;
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: var(--font-party);
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+  
+  /* Efecto Glassmorphism Neón */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    padding: 24px;
+  }
+  
+  .glow-pink {
+    box-shadow: 0 0 20px rgba(255, 0, 127, 0.45);
+    border-color: var(--neon-pink);
+  }
+  
+  .glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
+    border-color: var(--neon-cyan);
+  }
+  
+  /* Botones Base */
+  .btn {
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+  
+  .btn:active {
+    transform: scale(0.96);
+  }
+  
+  /* Espacio reservado para Banners de Monetización */
+  .ad-slot {
+    width: 100%;
+    max-width: 728px;
+    height: 90px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }

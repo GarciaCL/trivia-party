@@ -1,0 +1,81 @@
+.play-view {
+    width: 92%;
+    max-width: 440px;
+    min-height: 85vh;
+    margin: 16px auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .hidden { display: none !important; }
+  
+  /* Vista 1: Formulario de Ingreso */
+  .play-title { font-size: 2.2rem; font-weight: 900; color: var(--neon-pink); margin-bottom: 8px; }
+  .play-subtitle { color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem; }
+  
+  #form-join { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+  #input-team-name {
+    padding: 16px; font-size: 1.1rem; border-radius: 12px;
+    border: 2px solid var(--glass-border); background: rgba(0,0,0,0.4);
+    color: #fff; text-align: center; font-weight: 700;
+  }
+  #input-team-name:focus { outline: none; border-color: var(--neon-cyan); }
+  .btn-join { background: var(--neon-pink); color: #fff; box-shadow: 0 0 15px rgba(255,0,127,0.5); }
+  
+  /* Barra superior de Equipo */
+  .team-bar {
+    width: 100%; display: flex; justify-content: space-between;
+    padding: 12px 18px; margin-bottom: 24px; font-weight: 800; font-size: 1.1rem;
+  }
+  .team-score { color: var(--neon-yellow); }
+  
+  /* Vista 2: Botón Buzzer 3D */
+  .buzzer-container { display: flex; flex-direction: column; align-items: center; margin: auto 0; }
+  .buzzer-btn {
+    width: 220px; height: 220px; border-radius: 50%; border: 6px solid #ff4d94;
+    background: radial-gradient(circle at 35% 35%, #ff3366, #b3003b);
+    box-shadow: 0 12px 0 #660022, 0 0 35px rgba(255, 0, 127, 0.65);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .buzzer-btn:active {
+    transform: translateY(10px);
+    box-shadow: 0 2px 0 #660022, 0 0 45px rgba(255, 0, 127, 0.9);
+  }
+  .buzzer-btn:disabled {
+    filter: grayscale(0.85); opacity: 0.5; transform: none; box-shadow: none; cursor: not-allowed;
+  }
+  .buzzer-text { color: #fff; font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; }
+  .buzzer-hint { margin-top: 20px; color: var(--text-muted); font-size: 0.9rem; }
+  
+  /* Vista 3: Temporizador y 4 Opciones */
+  .timer-wrapper {
+    width: 100%; height: 16px; background: rgba(255,255,255,0.1);
+    border-radius: 8px; margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .timer-progress {
+    height: 100%; width: 100%; background: var(--neon-cyan);
+    transition: width 1s linear, background-color 0.3s ease;
+  }
+  .timer-countdown {
+    position: absolute; right: 8px; top: -22px;
+    font-weight: 900; color: var(--neon-cyan); font-size: 0.9rem;
+  }
+  
+  .options-grid {
+    width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .opt-btn {
+    min-height: 110px; border: none; border-radius: 16px; padding: 12px;
+    font-size: 1rem; font-weight: 800; cursor: pointer; color: #111;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.25); transition: transform 0.1s ease;
+  }
+  .opt-btn:active { transform: translateY(5px); box-shadow: none; }
+  .opt-orange { background: #ff7b00; }
+  .opt-cyan   { background: var(--neon-cyan); }
+  .opt-yellow { background: var(--neon-yellow); }
+  .opt-pink   { background: #ff4797; color: #fff; }

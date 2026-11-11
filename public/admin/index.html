@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trivia Party - Super Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+
+  <!-- Pantalla de Login de Administrador -->
+  <section id="admin-login" class="glass-card glow-pink admin-card">
+    <h1 class="admin-title">🔒 SUPER ADMIN</h1>
+    <p class="admin-sub">Acceso restringido para gestión de contenido</p>
+    <form id="form-login">
+      <input type="password" id="input-password" placeholder="Contraseña de admin" required>
+      <button type="submit" class="btn btn-login">INGRESAR</button>
+    </form>
+  </section>
+
+  <!-- Panel de Gestión de Contenido -->
+  <main id="admin-dashboard" class="admin-layout hidden">
+    <!-- Formulario para Añadir Contenido -->
+    <section class="glass-card glow-cyan admin-form-card">
+      <h2 class="section-title">AÑADIR CANCIÓN O ESCENA</h2>
+      <form id="form-item">
+        <div class="form-row">
+          <label>Tipo:
+            <select id="item-type">
+              <option value="music">Música</option>
+              <option value="movie">Película / Serie</option>
+            </select>
+          </label>
+          <label>Título visible:
+            <input type="text" id="item-title" placeholder="Ej: Queen - Bohemian Rhapsody" required>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>ID de YouTube:
+            <input type="text" id="item-ytid" placeholder="Ej: fJ9rUzIMcZQ" required>
+          </label>
+          <label>Seg. Inicio:
+            <input type="number" id="item-start" placeholder="45" required>
+          </label>
+          <label>Seg. Coro / Clímax:
+            <input type="number" id="item-chorus" placeholder="120" required>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="correct-field">Respuesta Correcta:
+            <input type="text" id="item-correct" placeholder="Título exacto" required>
+          </label>
+          <label class="trap-field">Opción Trampa:
+            <input type="text" id="item-trap" placeholder="Confusión típica" required>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>Distractor 1:
+            <input type="text" id="item-d1" placeholder="Opción alternativa" required>
+          </label>
+          <label>Distractor 2:
+            <input type="text" id="item-d2" placeholder="Opción alternativa" required>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-save">GUARDAR EN LA LISTA</button>
+      </form>
+    </section>
+
+    <!-- Lista de Contenido Cargado -->
+    <section class="glass-card glow-pink admin-list-card">
+      <h2 class="section-title">CONTENIDO ACTUAL</h2>
+      <ul id="items-list" class="content-list"></ul>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>
