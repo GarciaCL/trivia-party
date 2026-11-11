@@ -1,98 +1,87 @@
-import * as GameState from '../state/gameState.js';
-
-function shuffleOptions(item) {
-  const all = [item.correctAnswer, item.trapAnswer, ...item.distractors];
-  return all.sort(() => Math.random() - 0.5);
-}
+import { GameState } from '../state/gameState.js';
+import { ContentData } from '../state/contentData.js';
 
 export function initGameSockets(io) {
   io.on('connection', (socket) => {
-    // 1. Registro de equipo desde el móvil
-    socket.on('team:join', ({ name }) => {
-      const team = GameState.registerTeam(socket.id, name);
-      socket.emit('team:joined', { team, state: GameState.state });
-      io.emit('teams:updated', GameState.getTeamsList());
+    socket.emit('teams:updated', GameState.state.teams);
+
+    socket.on('team:join', ({ teamName }) => {
+      const team = GameState.addTeam(socket.id, teamName);
+      socket.emit('team:joined', team);
+      io.emit('teams:updated', GameState.state.teams);
     });
 
-    // 2. Un equipo presiona el buzzer ("¡ME LA SÉ!")
+    socket.on('host:toggle_mode', ({ mode }) => {
+      GameState.state.gameMode = mode;
+      io.emit('game:mode_changed', { mode });
+    });
+
+    socket.on('host:next_round', () => {
+      const item = ContentData.getRandomItem();
+      if (!item) return;
+      GameState.startNewRound(item);
+      io.emit('round:new', {
+        item: { id: item.id, youtubeId: item.youtubeId, startSec: item.startSec, type: item.type, title: item.title }
+      });
+      io.emit('round:options', { options: item.options });
+    });
+
     socket.on('buzzer:press', () => {
-      const claimed = GameState.tryClaimBuzzer(socket.id);
-      if (!claimed) return;
-
-      const team = GameState.state.teams.get(socket.id);
-      const currentItem = GameState.getCurrentItem();
-
-      io.emit('buzzer:locked', { teamId: socket.id, teamName: team.name });
-
-      if (GameState.state.gameMode === 'auto' && currentItem) {
-        const options = shuffleOptions(currentItem);
-        socket.emit('round:options', { options, timeLimit: 5 });
+      const lockedTeam = GameState.lockBuzzer(socket.id);
+      if (lockedTeam) {
+        io.emit('buzzer:locked', {
+          teamId: lockedTeam.id,
+          teamName: lockedTeam.name,
+          mode: GameState.state.gameMode
+        });
       }
     });
 
-    // 3. Respuesta enviada desde el móvil
-    socket.on('round:answer', ({ answer }) => {
-      if (GameState.state.buzzerLockedBy !== socket.id) return;
-
-      const currentItem = GameState.getCurrentItem();
-      const isCorrect = answer === currentItem.correctAnswer;
-      const delta = isCorrect ? 10 : -10;
-      const updatedTeam = GameState.updateScore(socket.id, delta);
-
-      GameState.releaseBuzzer();
-      io.emit('teams:updated', GameState.getTeamsList());
-
-      if (isCorrect) {
-        io.emit('round:success', { team: updatedTeam, chorusSec: currentItem.chorusSec });
-      } else {
-        io.emit('round:fail', { team: updatedTeam, answerSubmitted: answer });
-      }
-    });
-
-    // 4. Decisiones del árbitro (Modo Presentador)
     socket.on('host:judge', ({ action, bonus = 0 }) => {
-      const lockedId = GameState.state.buzzerLockedBy;
-      if (!lockedId) return;
-
-      const currentItem = GameState.getCurrentItem();
-      const delta = action === 'correct' ? (10 + bonus) : -10;
-      const updatedTeam = GameState.updateScore(lockedId, delta);
-
-      GameState.releaseBuzzer();
-      io.emit('teams:updated', GameState.getTeamsList());
+      const lockedTeam = GameState.state.lockedBy;
+      if (!lockedTeam) return;
 
       if (action === 'correct') {
-        io.emit('round:success', { team: updatedTeam, chorusSec: currentItem.chorusSec });
+        GameState.updateScore(lockedTeam.id, 10 + bonus);
+        io.emit('round:success', {
+          team: lockedTeam,
+          chorusSec: GameState.state.currentItem?.chorusSec || 0
+        });
       } else {
-        io.emit('round:fail', { team: updatedTeam });
+        GameState.updateScore(lockedTeam.id, -10);
+        io.emit('round:fail', { team: lockedTeam });
       }
+      GameState.releaseBuzzer();
+      io.emit('teams:updated', GameState.state.teams);
     });
 
-    // 5. Controles de sala y siguiente ronda
-    socket.on('host:next_round', () => {
-      const nextItem = GameState.nextRound();
-      io.emit('round:new', { item: nextItem });
-    });
+    socket.on('player:answer', ({ answerIndex }) => {
+      const lockedTeam = GameState.state.lockedBy;
+      if (!lockedTeam || lockedTeam.id !== socket.id) return;
 
-    // 6. Gestión Super Admin (Añadir, eliminar y listar contenido)
-    socket.on('admin:get_items', () => {
-      socket.emit('admin:items_list', GameState.state.items);
+      const isCorrect = answerIndex === GameState.state.currentItem.correctIndex;
+      if (isCorrect) {
+        GameState.updateScore(lockedTeam.id, 10);
+        io.emit('round:success', {
+          team: lockedTeam,
+          chorusSec: GameState.state.currentItem.chorusSec
+        });
+      } else {
+        GameState.updateScore(lockedTeam.id, -10);
+        io.emit('round:fail', { team: lockedTeam });
+      }
+      GameState.releaseBuzzer();
+      io.emit('teams:updated', GameState.state.teams);
     });
 
     socket.on('admin:add_item', (newItem) => {
-      GameState.state.items.push(newItem);
-      io.emit('admin:items_list', GameState.state.items);
+      const added = ContentData.addItem(newItem);
+      socket.emit('admin:item_added', added);
     });
 
-    socket.on('admin:delete_item', ({ id }) => {
-      GameState.state.items = GameState.state.items.filter((it) => it.id !== id);
-      io.emit('admin:items_list', GameState.state.items);
-    });
-
-    // Desconexión de equipo
     socket.on('disconnect', () => {
       GameState.removeTeam(socket.id);
-      io.emit('teams:updated', GameState.getTeamsList());
+      io.emit('teams:updated', GameState.state.teams);
     });
   });
 }

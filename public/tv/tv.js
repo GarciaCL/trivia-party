@@ -10,38 +10,38 @@ const btnStartParty = document.getElementById('btn-start-party');
 const musicVisualizer = document.getElementById('music-visualizer');
 const mediaStatusText = document.getElementById('media-status-text');
 const btnNextRound = document.getElementById('btn-next-round');
+const btnToggleMode = document.getElementById('btn-toggle-mode');
+const hostControls = document.getElementById('host-controls');
+const btnCorrect = document.getElementById('btn-judge-correct');
+const btnWrong = document.getElementById('btn-judge-wrong');
+const btnBonus = document.getElementById('btn-judge-bonus');
 
 let player = null;
 let currentItem = null;
 let gameStarted = false;
+let currentMode = 'auto';
 
-// Generar QR Gigante en el Lobby
 function initLobbyQR() {
   const qrContainer = document.getElementById('qr-code');
   if (qrContainer && window.QRCode) {
     qrContainer.innerHTML = '';
     new QRCode(qrContainer, {
       text: `${window.location.origin}/play`,
-      width: 180,
-      height: 180,
-      colorDark: '#0d0221',
-      colorLight: '#ffffff',
+      width: 180, height: 180,
+      colorDark: '#0d0221', colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
     });
   }
 }
 initLobbyQR();
 
-// Inicializar YouTube IFrame API
 window.onYouTubeIframeAPIReady = () => {
   player = new YT.Player('youtube-player', {
-    height: '100%',
-    width: '100%',
+    height: '100%', width: '100%',
     playerVars: { autoplay: 1, controls: 0, disablekb: 1, modestbranding: 1, rel: 0 }
   });
 };
 
-// Botón de Inicio: Oculta el lobby, activa sonido y lanza la primera canción
 btnStartParty.addEventListener('click', () => {
   gameStarted = true;
   welcomeLobby.classList.add('hidden');
@@ -49,42 +49,65 @@ btnStartParty.addEventListener('click', () => {
   socket.emit('host:next_round');
 });
 
+btnToggleMode.addEventListener('click', () => {
+  currentMode = currentMode === 'auto' ? 'host' : 'auto';
+  btnToggleMode.textContent = `MODO: ${currentMode.toUpperCase()}`;
+  socket.emit('host:toggle_mode', { mode: currentMode });
+});
+
+btnCorrect.addEventListener('click', () => {
+  socket.emit('host:judge', { action: 'correct' });
+  hostControls.classList.add('hidden');
+});
+
+btnWrong.addEventListener('click', () => {
+  socket.emit('host:judge', { action: 'wrong' });
+  hostControls.classList.add('hidden');
+});
+
+btnBonus.addEventListener('click', () => {
+  socket.emit('host:judge', { action: 'correct', bonus: 5 });
+  hostControls.classList.add('hidden');
+});
+
 function loadMedia(item) {
   currentItem = item;
   buzzerBanner.classList.add('hidden');
-
+  hostControls.classList.add('hidden');
   if (item.type === 'music') {
     musicVisualizer.classList.remove('hidden');
     mediaStatusText.textContent = '¡ESCUCHA CON ATENCIÓN!';
   } else {
     musicVisualizer.classList.add('hidden');
   }
-
   if (player && player.loadVideoById) {
-    player.unMute();
-    player.setVolume(100);
+    player.unMute(); player.setVolume(100);
     player.loadVideoById({ videoId: item.youtubeId, startSeconds: item.startSec });
     player.playVideo();
   }
 }
 
 btnNextRound.addEventListener('click', () => socket.emit('host:next_round'));
-socket.on('round:new', ({ item }) => {
-  if (gameStarted) loadMedia(item);
-});
+socket.on('round:new', ({ item }) => { if (gameStarted) loadMedia(item); });
 
 socket.on('buzzer:locked', ({ teamName }) => {
   if (player && player.pauseVideo) player.pauseVideo();
   alertTeamName.textContent = teamName;
-  alertSubtitle.textContent = 'Respondiendo en su celular (5s)...';
   buzzerBanner.classList.remove('hidden');
+  if (currentMode === 'host') {
+    alertSubtitle.textContent = '🎤 ¡El equipo responde oralmente! Decide el presentador:';
+    hostControls.classList.remove('hidden');
+  } else {
+    alertSubtitle.textContent = 'Respondiendo en su celular (5s)...';
+  }
 });
 
 socket.on('round:success', ({ team, chorusSec }) => {
   alertSubtitle.textContent = `¡CORRECTO! +10 pts para ${team.name} 🎉`;
+  hostControls.classList.add('hidden');
   setTimeout(() => {
     buzzerBanner.classList.add('hidden');
-    if (currentItem.type === 'music') {
+    if (currentItem && currentItem.type === 'music') {
       mediaStatusText.textContent = `¡FESTEJO! 🎶 ${currentItem.title}`;
     }
     if (player && player.seekTo) {
@@ -96,6 +119,7 @@ socket.on('round:success', ({ team, chorusSec }) => {
 
 socket.on('round:fail', ({ team }) => {
   alertSubtitle.textContent = `¡FALLÓ! -10 pts para ${team.name} ❌`;
+  hostControls.classList.add('hidden');
   setTimeout(() => {
     buzzerBanner.classList.add('hidden');
     if (player && player.playVideo) player.playVideo();

@@ -16,7 +16,7 @@
   <header class="tv-header glass-card">
     <div class="room-badge">SALA PIN: <span id="pin-display">1234</span></div>
     <div class="game-info">
-      <span id="badge-mode" class="badge">MODO AUTO</span>
+      <button id="btn-toggle-mode" class="badge btn-mode">MODO: AUTO</button>
       <span id="badge-type" class="badge">MÚSICA</span>
     </div>
     <button id="btn-next-round" class="btn btn-next">SIGUIENTE RONDA ⏭️</button>
@@ -29,7 +29,7 @@
         <div id="youtube-player"></div>
       </div>
 
-      <!-- Pantalla Visual de Modo Música (Activa durante el juego) -->
+      <!-- Pantalla Visual Modo Música -->
       <div id="music-visualizer" class="music-screen hidden">
         <div class="sound-wave">
           <span></span><span></span><span></span><span></span><span></span>
@@ -37,7 +37,7 @@
         <h2 id="media-status-text" class="stage-text">¡ESCUCHA CON ATENCIÓN!</h2>
       </div>
 
-      <!-- Lobby de Bienvenida: QR Gigante + Espera de Equipos -->
+      <!-- Lobby con QR Gigante -->
       <div id="welcome-lobby" class="lobby-screen">
         <h1 class="lobby-title">¡ÚNETE A LA TRIVIA!</h1>
         <p class="lobby-sub">Escanea con la cámara de tu celular</p>
@@ -55,7 +55,7 @@
         <p id="alert-subtitle" class="alert-sub">Respondiendo en su celular (5s)...</p>
       </div>
 
-      <!-- Controles de Árbitro Host -->
+      <!-- Controles de Árbitro / Host -->
       <div id="host-controls" class="host-panel hidden">
         <button id="btn-judge-correct" class="btn btn-correct">Luz Verde (+10)</button>
         <button id="btn-judge-wrong" class="btn btn-wrong">Luz Roja (-10)</button>
@@ -73,7 +73,6 @@
     </aside>
   </main>
 
-  <!-- YouTube API, QR Generator, Socket.io y lógica TV -->
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
