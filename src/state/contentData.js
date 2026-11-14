@@ -1,65 +1,54 @@
-// Lista inicial de canciones y escenas para Trivia Party
-export const initialItems = [
-    // MODO MÚSICA
+export const ContentData = {
+  items: [
     {
-      id: 'song-1',
-      type: 'music',
-      title: 'Queen - Bohemian Rhapsody',
-      youtubeId: 'fJ9rUzIMcZQ',
-      startSec: 48,
-      chorusSec: 187,
-      correctAnswer: 'Bohemian Rhapsody',
-      trapAnswer: 'Mama, Just Killed a Man', // Opción trampa típica de la letra
-      distractors: ['We Are the Champions', 'Somebody to Love']
+      id: 'm1', type: 'music', title: 'Gasolina - Daddy Yankee', youtubeId: 'qGKrc3A6HHM',
+      startSec: 15, chorusSec: 52,
+      options: ['Gasolina - Daddy Yankee', 'Lo Que Pasó - Daddy Yankee', 'Rompe - Daddy Yankee', 'Mayor Que Yo - Baby Ranks'],
+      correctIndex: 0
     },
     {
-      id: 'song-2',
-      type: 'music',
-      title: 'Michael Jackson - Billie Jean',
-      youtubeId: 'Zi_XLORVo',
-      startSec: 12,
-      chorusSec: 88,
-      correctAnswer: 'Billie Jean',
-      trapAnswer: 'The Kid Is Not My Son', // Opción trampa
-      distractors: ['Beat It', 'Smooth Criminal']
+      id: 'm2', type: 'music', title: 'Billie Jean - Michael Jackson', youtubeId: 'dk_MYgU_yH8',
+      startSec: 10, chorusSec: 42,
+      options: ['Beat It - Michael Jackson', 'Billie Jean - Michael Jackson', 'Thriller - Michael Jackson', 'Bad - Michael Jackson'],
+      correctIndex: 1
     },
     {
-      id: 'song-3',
-      type: 'music',
-      title: 'Luis Fonsi - Despacito',
-      youtubeId: 'kJQP7kiw5Fk',
-      startSec: 15,
-      chorusSec: 72,
-      correctAnswer: 'Despacito',
-      trapAnswer: 'Pasito a Pasito', // Opción trampa
-      distractors: ['Échame la Culpa', 'Bailando']
-    },
-  
-    // MODO PELÍCULAS / SERIES
-    {
-      id: 'movie-1',
-      type: 'movie',
-      title: 'Star Wars: Episodio V',
-      youtubeId: '_lOT2p_FCvA',
-      startSec: 25,
-      chorusSec: 75,
-      correctAnswer: 'Star Wars: El Imperio Contraataca',
-      trapAnswer: 'Star Wars: Una Nueva Esperanza', // Confusión con la primera entrega
-      distractors: ['Star Wars: El Retorno del Jedi', 'Star Trek: Nemesis'],
-      bonusQuestion: '¿Año de estreno?',
-      bonusAnswer: '1980'
+      id: 'm3', type: 'music', title: 'De Música Ligera - Soda Stereo', youtubeId: 'oxknV-N46VU',
+      startSec: 8, chorusSec: 52,
+      options: ['Trátame Suavemente - Soda Stereo', 'Persiana Americana - Soda Stereo', 'De Música Ligera - Soda Stereo', 'Prófugos - Soda Stereo'],
+      correctIndex: 2
     },
     {
-      id: 'movie-2',
-      type: 'movie',
-      title: 'Titanic',
-      youtubeId: 'kVrqfYjkTdQ',
-      startSec: 10,
-      chorusSec: 65,
-      correctAnswer: 'Titanic',
-      trapAnswer: 'El Naufragio Perfecto', // Título falso convincente
-      distractors: ['Pearl Harbor', 'Poseidón'],
-      bonusQuestion: '¿Director de la película?',
-      bonusAnswer: 'James Cameron'
+      id: 'm4', type: 'music', title: 'Danza Kuduro - Don Omar', youtubeId: '7zp1TbLFPp8',
+      startSec: 25, chorusSec: 50,
+      options: ['Salió El Sol - Don Omar', 'Taboo - Don Omar', 'Dile - Don Omar', 'Danza Kuduro - Don Omar'],
+      correctIndex: 3
+    },
+    {
+      id: 'c1', type: 'movie', title: 'Star Wars: El Imperio Contraataca', youtubeId: '_lOT2p_FCvA',
+      startSec: 20, chorusSec: 100,
+      options: ['Star Wars: Una Nueva Esperanza', 'Star Wars: El Retorno del Jedi', 'Star Wars: El Imperio Contraataca', 'Star Wars: La Venganza de los Sith'],
+      correctIndex: 2
+    },
+    {
+      id: 'c2', type: 'movie', title: 'Titanic', youtubeId: 'F2RnxZnubVQ',
+      startSec: 30, chorusSec: 90,
+      options: ['Romeo y Julieta', 'El Gran Gatsby', 'El Diario de Noa', 'Titanic'],
+      correctIndex: 3
     }
-  ];
+  ],
+
+  getRandomItem(filterCategory = 'all') {
+    let pool = this.items;
+    if (filterCategory === 'music') pool = this.items.filter(i => i.type === 'music');
+    if (filterCategory === 'movie') pool = this.items.filter(i => i.type === 'movie');
+    if (pool.length === 0) pool = this.items;
+    return pool[Math.floor(Math.random() * pool.length)];
+  },
+
+  addItem(item) {
+    const newItem = { id: `custom_${Date.now()}`, ...item };
+    this.items.push(newItem);
+    return newItem;
+  }
+};
