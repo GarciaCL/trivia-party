@@ -6,7 +6,9 @@ const formJoin = document.getElementById('form-join');
 const inputTeamName = document.getElementById('input-team-name');
 const playerTeamDisplay = document.getElementById('player-team-display');
 const playerScoreDisplay = document.getElementById('player-score-display');
+const buzzerBox = document.getElementById('buzzer-box');
 const btnBuzzer = document.getElementById('btn-buzzer');
+const buzzerHint = document.getElementById('buzzer-hint');
 const optionsPanel = document.getElementById('options-panel');
 const optionsGrid = document.getElementById('options-grid');
 const lockedBanner = document.getElementById('locked-banner');
@@ -14,8 +16,8 @@ const lockedMsg = document.getElementById('locked-msg');
 const lockedTeamName = document.getElementById('locked-team-name');
 const hostModeBanner = document.getElementById('host-mode-banner');
 
-let myTeam = null;
-let currentOptions = [];
+let myTeam = null, currentOptions = [];
+const colorClasses = ['opt-orange', 'opt-cyan', 'opt-yellow', 'opt-pink'];
 
 formJoin.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -33,9 +35,10 @@ socket.on('team:joined', (team) => {
 socket.on('round:options', ({ options }) => { currentOptions = options || []; });
 
 function resetBuzzerView() {
-  btnBuzzer.classList.remove('hidden');
+  buzzerBox.classList.remove('hidden');
   btnBuzzer.disabled = false;
-  btnBuzzer.querySelector('span').textContent = '¡ME LA SÉ!';
+  btnBuzzer.querySelector('.buzzer-text').textContent = '¡ME LA SÉ!';
+  buzzerHint.textContent = '¡Pulsa rápido cuando reconozcas el tema!';
   optionsPanel.classList.add('hidden');
   lockedBanner.classList.add('hidden');
   hostModeBanner.classList.add('hidden');
@@ -50,17 +53,16 @@ btnBuzzer.addEventListener('click', () => {
 });
 
 socket.on('buzzer:locked', ({ teamId, teamName, mode }) => {
-  btnBuzzer.classList.add('hidden');
-
+  buzzerBox.classList.add('hidden');
   if (myTeam && teamId === myTeam.id) {
     if (mode === 'host') {
       hostModeBanner.classList.remove('hidden');
-      optionsPanel.classList.add('hidden');
     } else {
       optionsPanel.classList.remove('hidden');
       renderOptions();
     }
   } else {
+    lockedMsg.textContent = '¡Turno Bloqueado!';
     lockedTeamName.textContent = `${teamName} está respondiendo...`;
     lockedBanner.classList.remove('hidden');
   }
@@ -70,12 +72,12 @@ function renderOptions() {
   optionsGrid.innerHTML = '';
   currentOptions.forEach((opt, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'btn-option';
+    btn.className = `opt-btn ${colorClasses[idx % 4]}`;
     btn.textContent = opt;
     btn.addEventListener('click', () => {
       socket.emit('player:answer', { answerIndex: idx });
       optionsPanel.classList.add('hidden');
-      btnBuzzer.classList.remove('hidden');
+      buzzerBox.classList.remove('hidden');
       btnBuzzer.disabled = true;
     });
     optionsGrid.appendChild(btn);
@@ -87,25 +89,21 @@ socket.on('round:success', ({ team }) => {
   setTimeout(resetBuzzerView, 1200);
 });
 
-socket.on('round:fail', ({ team, failedTeamId, attemptedTeams = [] }) => {
+socket.on('round:fail', ({ team, attemptedTeams = [] }) => {
   if (myTeam && team.id === myTeam.id) myTeam.score = team.score;
-
   setTimeout(() => {
     optionsPanel.classList.add('hidden');
     hostModeBanner.classList.add('hidden');
-
     if (myTeam && attemptedTeams.includes(myTeam.id)) {
-      // Este equipo ya falló: queda inhabilitado por el resto de la ronda
-      btnBuzzer.classList.add('hidden');
+      buzzerBox.classList.add('hidden');
       lockedMsg.textContent = '¡Fallaste en esta ronda!';
       lockedTeamName.textContent = 'Espera la siguiente canción... ❌';
       lockedBanner.classList.remove('hidden');
     } else {
-      // Los demás equipos pueden robar el turno
       lockedBanner.classList.add('hidden');
-      btnBuzzer.classList.remove('hidden');
+      buzzerBox.classList.remove('hidden');
       btnBuzzer.disabled = false;
-      btnBuzzer.querySelector('span').textContent = '¡ROBAR PUNTOS! ⚡';
+      btnBuzzer.querySelector('.buzzer-text').textContent = '¡ROBAR! ⚡';
     }
   }, 1200);
 });

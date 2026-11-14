@@ -12,52 +12,57 @@
 </head>
 <body>
 
-  <main class="player-container">
-    <!-- Vista de Ingreso de Equipo -->
-    <section id="login-view" class="card glass-card">
-      <h1 class="game-title">TRIVIA PARTY</h1>
-      <p class="subtitle">Ingresa el nombre de tu equipo:</p>
-      <form id="form-join" class="form-join">
-        <input type="text" id="input-team-name" class="input-text" placeholder="Ej: Los Invencibles" maxlength="20" required autocomplete="off">
-        <button type="submit" class="btn btn-join">¡ENTRAR AL JUEGO! 🚀</button>
-      </form>
-    </section>
+  <!-- Vista 1: Ingreso de Equipo -->
+  <section id="login-view" class="play-view glass-card">
+    <h1 class="play-title">TRIVIA PARTY</h1>
+    <p class="play-subtitle">Ingresa el nombre de tu equipo para jugar:</p>
+    <form id="form-join">
+      <input type="text" id="input-team-name" placeholder="Nombre de tu equipo" maxlength="20" required autocomplete="off">
+      <button type="submit" class="btn btn-join">¡ENTRAR AL JUEGO! 🚀</button>
+    </form>
+    <div class="ad-slot" style="margin-top: 24px; width: 100%;">Publicidad / AdWords</div>
+  </section>
 
-    <!-- Vista de Juego Activo -->
-    <section id="game-view" class="card glass-card hidden">
-      <header class="player-header">
-        <span id="player-team-display" class="badge-team">Equipo</span>
-        <span id="player-score-display" class="badge-score">0 pts</span>
-      </header>
+  <!-- Vista 2 y 3: Juego Activo -->
+  <section id="game-view" class="play-view hidden">
+    <header class="team-bar glass-card">
+      <span id="player-team-display">Equipo</span>
+      <span id="player-score-display" class="team-score">0 pts</span>
+    </header>
 
-      <div class="buzzer-zone">
-        <!-- Buzzer Gigante -->
-        <button id="btn-buzzer" class="btn-buzzer pulse-animation">
-          <span>¡ME LA SÉ!</span>
-        </button>
+    <!-- Buzzer 3D -->
+    <div id="buzzer-box" class="buzzer-container">
+      <button id="btn-buzzer" class="buzzer-btn">
+        <span class="buzzer-text">¡ME LA SÉ!</span>
+      </button>
+      <p id="buzzer-hint" class="buzzer-hint">¡Pulsa rápido cuando reconozcas el tema!</p>
+    </div>
 
-        <!-- Bloque Modo Host: Hablar en voz alta -->
-        <div id="host-mode-banner" class="locked-banner hidden">
-          <p class="lock-icon">🎤</p>
-          <h2 class="lock-title">¡HABLA EN VOZ ALTA!</h2>
-          <p class="lock-desc">Dile tu respuesta al presentador.</p>
-        </div>
+    <!-- Modo Presentador: Hablar en voz alta -->
+    <div id="host-mode-banner" class="glass-card hidden" style="padding: 24px; width: 100%; margin: auto 0;">
+      <p style="font-size: 3rem; margin-bottom: 10px;">🎤</p>
+      <h2 style="color: var(--neon-cyan); margin-bottom: 8px;">¡HABLA EN VOZ ALTA!</h2>
+      <p style="color: var(--text-muted);">El presentador está calificando tu respuesta.</p>
+    </div>
 
-        <!-- Botonera de Respuestas (Modo Auto) -->
-        <div id="options-panel" class="options-container hidden">
-          <div class="timer-bar"><div id="timer-progress" class="progress"></div></div>
-          <div id="options-grid" class="options-grid"></div>
-        </div>
+    <!-- Bloqueo de Turno / Robo -->
+    <div id="locked-banner" class="glass-card hidden" style="padding: 24px; width: 100%; margin: auto 0;">
+      <p style="font-size: 3rem; margin-bottom: 10px;">🔒</p>
+      <h2 id="locked-msg" style="color: var(--neon-yellow); margin-bottom: 8px;">¡Turno Bloqueado!</h2>
+      <p id="locked-team-name" style="color: var(--text-muted);">Otro equipo está respondiendo...</p>
+    </div>
 
-        <!-- Banner de Turno Bloqueado para Otros Equipos -->
-        <div id="locked-banner" class="locked-banner hidden">
-          <p class="lock-icon">🔒</p>
-          <h2 id="locked-msg" class="lock-title">¡Turno Bloqueado!</h2>
-          <p id="locked-team-name" class="lock-desc">Otro equipo está respondiendo...</p>
-        </div>
+    <!-- 4 Opciones 2x2 -->
+    <div id="options-panel" class="hidden" style="width: 100%; margin: auto 0;">
+      <div class="timer-wrapper">
+        <span id="timer-countdown" class="timer-countdown">5s</span>
+        <div id="timer-progress" class="timer-progress"></div>
       </div>
-    </section>
-  </main>
+      <div id="options-grid" class="options-grid"></div>
+    </div>
+
+    <div class="ad-slot" style="margin-top: 20px; width: 100%;">Publicidad / AdWords</div>
+  </section>
 
   <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="/play/play.js"></script>
