@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body style="padding: 24px; max-width: 1050px; margin: 0 auto;">
 
@@ -32,7 +33,13 @@
 
         <div style="display: flex; gap: 8px;">
           <input type="text" id="item-title" placeholder="Título (Ej: Thriller - Michael Jackson)" required style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-          <button type="button" id="btn-ai-options" class="btn" style="background: linear-gradient(135deg, #9d4edd, #ff007f); color: #fff;">✨ IA</button>
+          <button type="button" id="btn-ai-options" class="btn" style="background: linear-gradient(135deg, #9d4edd, #ff007f); color: #fff; min-width: 90px;">✨ IA</button>
+        </div>
+
+        <!-- Indicador de progreso mientras trabaja la IA -->
+        <div id="ai-loading-banner" class="hidden" style="padding: 10px 14px; border-radius: 10px; background: rgba(157, 78, 221, 0.25); border: 1px solid #9d4edd; color: #e0d4fc; font-size: 0.88rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+          <span>🧠 Pensando opciones con Gemini IA...</span>
+          <span id="ai-timer" style="color: #00f0ff;">0.0s</span>
         </div>
 
         <div style="display: flex; gap: 8px;">
@@ -49,10 +56,10 @@
           </label>
         </div>
 
-        <input type="text" id="opt-0" placeholder="Opción 1 (Respuesta Correcta)" required style="padding: 10px; border-radius: 8px; background: rgba(0,255,136,0.12); color: #fff; border: 1px solid #00ff88;">
-        <input type="text" id="opt-1" placeholder="Opción 2 (Distractor)" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="text" id="opt-2" placeholder="Opción 3 (Distractor)" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="text" id="opt-3" placeholder="Opción 4 (Distractor)" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="opt-0" placeholder="Opción 1" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="opt-1" placeholder="Opción 2" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="opt-2" placeholder="Opción 3" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="opt-3" placeholder="Opción 4" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
 
         <button type="submit" id="btn-save-item" class="btn" disabled style="background: #ff007f; color: #fff; padding: 14px; opacity: 0.45; cursor: not-allowed;">
           ⚠️ PRUEBA EL VIDEO PRIMERO

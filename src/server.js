@@ -41,26 +41,37 @@ app.post('/api/generate-options', async (req, res) => {
   const kind = type === 'movie' ? 'película o serie' : 'canción con su artista';
   const prompt = `Para una trivia sobre la ${kind} "${title}", genera exactamente 3 respuestas incorrectas pero plausibles del mismo estilo, época o género. Devuelve SOLO un arreglo JSON de 3 strings.`;
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' }
-      })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data?.error?.message || 'Error en la API de Gemini.' });
+  // Lista de modelos en orden de prioridad: si uno tiene pico de demanda (503/429), pasa al siguiente
+  const models = ['gemini-3.8-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+  let lastError = 'Los servidores de IA están saturados temporalmente.';
+
+  for (const model of models) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        lastError = data?.error?.message || `Error ${response.status}`;
+        continue; // Probar siguiente modelo
+      }
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      const match = raw.match(/\[[\s\S]*\]/);
+      const parsed = JSON.parse(match ? match[0] : raw);
+      if (Array.isArray(parsed) && parsed.length >= 3) {
+        return res.json({ distractors: parsed.slice(0, 3), modelUsed: model });
+      }
+    } catch (err) {
+      lastError = err.message;
     }
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-    const match = raw.match(/\[[\s\S]*\]/);
-    const parsed = JSON.parse(match ? match[0] : raw);
-    res.json({ distractors: parsed.slice(0, 3) });
-  } catch (err) {
-    res.status(500).json({ error: `Fallo al procesar respuesta IA: ${err.message}` });
   }
+
+  res.status(503).json({ error: lastError });
 });
 
 app.get('/', (req, res) => res.redirect('/tv'));

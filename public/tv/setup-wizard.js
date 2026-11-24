@@ -100,21 +100,40 @@ export function initSetupWizard({ onReadyToStart }) {
     });
   
     // Verificación de jugadores antes de arrancar
-    btnStart.addEventListener('click', () => {
-      if (!countdownDone) return;
-      const countText = document.getElementById('lobby-teams-counter')?.textContent || '0';
-      const teamCount = parseInt(countText.replace(/\D/g, ''), 10) || 0;
-  
-      if (teamCount === 0) {
-        alert('⚠️ Aún no hay ningún equipo conectado. Pide a los jugadores que escaneen el código QR.');
-        return;
-      }
-  
-      if (teamCount === 1) {
-        const ok = confirm('Solo hay 1 equipo conectado. ¿Deseas iniciar el juego de todas formas o esperar a más jugadores?');
-        if (!ok) return;
-      }
-  
-      onReadyToStart({ mode: chosenMode, category: chosenCategory });
-    });
+    // Verificación de jugadores antes de arrancar con SweetAlert2
+  btnStart.addEventListener('click', async () => {
+    if (!countdownDone) return;
+    const countText = document.getElementById('lobby-teams-counter')?.textContent || '0';
+    const teamCount = parseInt(countText.replace(/\D/g, ''), 10) || 0;
+
+    if (teamCount === 0) {
+      window.Swal?.fire({
+        icon: 'warning',
+        title: '¡Faltan jugadores!',
+        text: 'Pide a los participantes que escaneen el código QR con su celular antes de comenzar.',
+        background: '#140533',
+        color: '#fff',
+        confirmButtonColor: '#00f0ff'
+      });
+      return;
+    }
+
+    if (teamCount === 1) {
+      const res = await window.Swal?.fire({
+        icon: 'question',
+        title: 'Solo hay 1 equipo conectado',
+        text: '¿Deseas iniciar la partida ahora o esperar a que se unan más jugadores?',
+        showCancelButton: true,
+        confirmButtonText: '🎉 ¡Iniciar ahora!',
+        cancelButtonText: 'Esperar más jugadores',
+        confirmButtonColor: '#ff007f',
+        cancelButtonColor: '#3a2d5c',
+        background: '#140533',
+        color: '#fff'
+      });
+      if (!res?.isConfirmed) return;
+    }
+
+    onReadyToStart({ mode: chosenMode, category: chosenCategory });
+  });
   }

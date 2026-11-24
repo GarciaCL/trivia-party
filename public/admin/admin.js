@@ -12,6 +12,15 @@ const inputYoutube = document.getElementById('item-youtube');
 const inputStart = document.getElementById('item-start');
 const inputTitle = document.getElementById('item-title');
 const editIdInput = document.getElementById('edit-item-id');
+const aiBanner = document.getElementById('ai-loading-banner');
+const aiTimerEl = document.getElementById('ai-timer');
+
+// Helper de SweetAlert2 con tema oscuro Trivia Party
+const notify = (icon, title, text = '') => window.Swal?.fire({
+  icon, title, text, background: '#140533', color: '#fff',
+  confirmButtonColor: '#ff007f', timer: icon === 'success' ? 2200 : undefined,
+  showConfirmButton: icon !== 'success'
+});
 
 function extractYouTubeId(input) {
   const trimmed = input.trim();
@@ -27,11 +36,26 @@ function setSaveEnabled(enabled, label) {
   btnSave.textContent = label;
 }
 
+function resetFullForm() {
+  editIdInput.value = '';
+  currentVideoId = '';
+  currentCorrectIndex = 0;
+  document.getElementById('form-heading').textContent = '➕ Nuevo Tema';
+  document.getElementById('btn-cancel-edit').classList.add('hidden');
+  document.getElementById('form-add-item').reset();
+  document.getElementById('item-start').value = 15;
+  document.getElementById('item-chorus').value = 45;
+  previewPlayer?.stopVideo?.();
+  statusBox.style.background = 'rgba(255,255,255,0.08)';
+  statusBox.style.color = '#fff';
+  statusBox.textContent = 'Pega un enlace de YouTube y pulsa "Probar" para verificar permisos.';
+  setSaveEnabled(false, '⚠️ PRUEBA EL VIDEO PRIMERO');
+}
+
 function initPreviewPlayer() {
   if (previewPlayer || !window.YT?.Player) return;
   previewPlayer = new window.YT.Player('admin-yt-player', {
-    height: '100%',
-    width: '100%',
+    height: '100%', width: '100%',
     playerVars: { autoplay: 1, controls: 1, playsinline: 1, origin: window.location.origin },
     events: {
       onReady: () => {
@@ -43,7 +67,6 @@ function initPreviewPlayer() {
       },
       onStateChange: (e) => {
         if (e.data === window.YT.PlayerState.PLAYING || e.data === window.YT.PlayerState.BUFFERING) {
-          // Extraer título desde YouTube automáticamente si el campo está vacío
           const ytTitle = previewPlayer?.getVideoData?.()?.title;
           if (ytTitle && !inputTitle.value.trim()) {
             inputTitle.value = ytTitle.replace(/\(Official.*?\)|\[Official.*?\]/gi, '').trim();
@@ -84,13 +107,20 @@ function runVideoTest(id, startSec) {
 window.onYouTubeIframeAPIReady = initPreviewPlayer;
 if (window.YT?.Player) initPreviewPlayer();
 
-// Generar distractores con IA y ubicar la respuesta correcta en una posición aleatoria (0-3)
+// Generar opciones con cronómetro visual en vivo
 document.getElementById('btn-ai-options').addEventListener('click', async () => {
   const title = inputTitle.value.trim();
-  if (!title) return alert('Escribe primero el título (o prueba el video de YouTube para traerlo solo).');
+  if (!title) return notify('warning', 'Falta el título', 'Escribe el título o prueba el video de YouTube para traerlo solo.');
+
   const btnAi = document.getElementById('btn-ai-options');
   btnAi.disabled = true;
   btnAi.textContent = '⏳...';
+  aiBanner.classList.remove('hidden');
+
+  const startTime = Date.now();
+  const clock = setInterval(() => {
+    aiTimerEl.textContent = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
+  }, 100);
 
   try {
     const res = await fetch('/api/generate-options', {
@@ -107,12 +137,15 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
       mixed.forEach((opt, i) => {
         document.getElementById(`opt-${i}`).value = opt;
       });
+      notify('success', '¡Opciones generadas!', `Respuesta correcta ubicada en la opción #${randomPos + 1}`);
     } else {
-      alert(`Error IA: ${data.error || 'Respuesta inválida de Gemini.'}`);
+      notify('error', 'IA temporalmente ocupada', data.error || 'Intenta nuevamente en unos segundos.');
     }
   } catch (err) {
-    alert('Error de red al conectar con el servidor.');
+    notify('error', 'Error de conexión', 'No se pudo contactar con el servidor.');
   } finally {
+    clearInterval(clock);
+    aiBanner.classList.add('hidden');
     btnAi.disabled = false;
     btnAi.textContent = '✨ IA';
   }
@@ -120,11 +153,7 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
 
 document.getElementById('btn-test-yt').addEventListener('click', () => {
   const id = extractYouTubeId(inputYoutube.value);
-  if (!id) {
-    statusBox.style.color = '#ffd700';
-    statusBox.textContent = '⚠️ Ingresa un enlace o ID válido (11 caracteres).';
-    return;
-  }
+  if (!id) return notify('warning', 'Enlace inválido', 'Pega una URL de YouTube o un ID de 11 caracteres.');
   currentVideoId = id;
   setSaveEnabled(false, '⏳ COMPROBANDO...');
   statusBox.style.background = 'rgba(0, 240, 255, 0.15)';
@@ -173,18 +202,24 @@ window.editItem = (id) => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-document.getElementById('btn-cancel-edit').addEventListener('click', () => {
-  editIdInput.value = '';
-  currentCorrectIndex = 0;
-  document.getElementById('form-heading').textContent = '➕ Nuevo Tema';
-  document.getElementById('btn-cancel-edit').classList.add('hidden');
-  document.getElementById('form-add-item').reset();
-  setSaveEnabled(false, '⚠️ PRUEBA EL VIDEO PRIMERO');
-});
+document.getElementById('btn-cancel-edit').addEventListener('click', resetFullForm);
 
 window.deleteItem = async (id) => {
-  if (!confirm('¿Eliminar este tema del catálogo?')) return;
+  const result = await window.Swal.fire({
+    title: '¿Eliminar este tema?',
+    text: 'Se borrará permanentemente de MongoDB Atlas.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ff2a5f',
+    cancelButtonColor: '#3a2d5c',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    background: '#140533',
+    color: '#fff'
+  });
+  if (!result.isConfirmed) return;
   await fetch(`/api/content/${id}`, { method: 'DELETE' });
+  notify('success', 'Tema eliminado');
   loadCatalog();
 };
 
@@ -194,7 +229,6 @@ document.getElementById('form-add-item').addEventListener('submit', async (e) =>
 
   const opts = [0, 1, 2, 3].map(i => document.getElementById(`opt-${i}`).value.trim());
   const title = inputTitle.value.trim();
-  // Si el usuario escribió las opciones manualmente sin usar IA, mezclar aleatoriamente
   const foundIdx = opts.findIndex(o => o.toLowerCase() === title.toLowerCase());
   let finalOptions = opts;
   let finalCorrectIndex = foundIdx !== -1 ? foundIdx : currentCorrectIndex;
@@ -228,8 +262,9 @@ document.getElementById('form-add-item').addEventListener('submit', async (e) =>
   });
 
   if (res.ok) {
-    document.getElementById('btn-cancel-edit').click();
-    loadCatalog();
+    resetFullForm();
+    await loadCatalog();
+    notify('success', editId ? '¡Tema actualizado!' : '¡Guardado en MongoDB!');
   }
 });
 
