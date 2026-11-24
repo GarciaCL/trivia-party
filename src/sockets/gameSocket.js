@@ -16,12 +16,12 @@ export function initGameSockets(io) {
       io.emit('game:mode_changed', { mode });
     });
 
-    socket.on('host:next_round', ({ category = 'all' } = {}) => {
-      const item = ContentData.getRandomItem(category);
+    socket.on('host:next_round', async ({ category = 'all' } = {}) => {
+      const item = await ContentData.getRandomItem(category);
       if (!item) return;
       GameState.startNewRound(item);
       io.emit('round:new', {
-        item: { id: item.id, youtubeId: item.youtubeId, startSec: item.startSec, type: item.type, title: item.title }
+        item: { id: item._id, youtubeId: item.youtubeId, startSec: item.startSec, type: item.type, title: item.title }
       });
       io.emit('round:options', { options: item.options });
     });
