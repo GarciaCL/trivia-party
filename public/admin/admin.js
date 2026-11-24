@@ -1,73 +1,109 @@
-const socket = io();
+let previewPlayer = null;
+let isVideoValid = false;
+let currentVideoId = '';
 
-const adminLogin = document.getElementById('admin-login');
-const adminDashboard = document.getElementById('admin-dashboard');
-const formLogin = document.getElementById('form-login');
-const inputPassword = document.getElementById('input-password');
+const statusBox = document.getElementById('preview-status');
+const btnSave = document.getElementById('btn-save-item');
+const inputYoutube = document.getElementById('item-youtube');
+const inputStart = document.getElementById('item-start');
 
-const formItem = document.getElementById('form-item');
-const itemsList = document.getElementById('items-list');
+// Extraer ID limpio ya sea de una URL completa o un ID directo
+function extractYouTubeId(input) {
+  const trimmed = input.trim();
+  const match = trimmed.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : (trimmed.length === 11 ? trimmed : null);
+}
 
-// 1. Verificación de Contraseña de Administrador
-formLogin.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const password = inputPassword.value.trim();
-  // Clave de acceso predeterminada
-  if (password === 'admin123') {
-    adminLogin.classList.add('hidden');
-    adminDashboard.classList.remove('hidden');
-    socket.emit('admin:get_items');
-  } else {
-    alert('Contraseña incorrecta. Intenta nuevamente.');
-    inputPassword.value = '';
-  }
-});
-
-// 2. Renderizado de la lista de canciones y clips
-socket.on('admin:items_list', (items) => {
-  itemsList.innerHTML = '';
-  items.forEach((item) => {
-    const li = document.createElement('li');
-    li.className = 'content-item';
-    li.innerHTML = `
-      <div class="item-info">
-        <span class="item-name">${item.title}</span>
-        <span class="item-meta">
-          [${item.type.toUpperCase()}] • YouTube: ${item.youtubeId} • Inicio: ${item.startSec}s • Coro: ${item.chorusSec}s
-        </span>
-      </div>
-      <button class="btn-delete" data-id="${item.id}">Eliminar</button>
-    `;
-
-    li.querySelector('.btn-delete').addEventListener('click', () => {
-      if (confirm(`¿Eliminar "${item.title}"?`)) {
-        socket.emit('admin:delete_item', { id: item.id });
+window.onYouTubeIframeAPIReady = () => {
+  previewPlayer = new window.YT.Player('admin-yt-player', {
+    height: '100%',
+    width: '100%',
+    playerVars: { autoplay: 0, controls: 1, origin: window.location.origin },
+    events: {
+      onStateChange: (e) => {
+        // Estado 1 = PLAYING (El video cargó y tiene permisos válidos)
+        if (e.data === window.YT.PlayerState.PLAYING) {
+          isVideoValid = true;
+          statusBox.style.background = 'rgba(0, 255, 136, 0.2)';
+          statusBox.style.color = '#00ff88';
+          statusBox.textContent = '✅ ¡Video apto! Se reproduce y suena correctamente.';
+          btnSave.disabled = false;
+          btnSave.style.opacity = '1';
+          btnSave.style.cursor = 'pointer';
+          btnSave.textContent = '💾 GUARDAR EN EL CATÁLOGO';
+        }
+      },
+      onError: (e) => {
+        isVideoValid = false;
+        const reasons = {
+          2: 'ID de video inválido.',
+          100: 'Video eliminado o marcado como privado.',
+          101: 'Bloqueado por derechos de autor (no permite reproducción externa).',
+          150: 'Bloqueado por derechos de autor (reclamación de estudio/disquera).'
+        };
+        statusBox.style.background = 'rgba(255, 42, 95, 0.25)';
+        statusBox.style.color = '#ff4d6d';
+        statusBox.textContent = `❌ No utilizable: ${reasons[e.data] || 'Error de permisos en YouTube.'}`;
+        btnSave.disabled = true;
+        btnSave.style.opacity = '0.45';
+        btnSave.style.cursor = 'not-allowed';
+        btnSave.textContent = '⚠️ ELIGE OTRO VIDEO VÁLIDO';
       }
-    });
-
-    itemsList.appendChild(li);
+    }
   });
+};
+
+document.getElementById('btn-test-yt').addEventListener('click', () => {
+  const id = extractYouTubeId(inputYoutube.value);
+  if (!id) {
+    statusBox.style.color = '#ffd700';
+    statusBox.textContent = '⚠️ Ingresa un enlace o ID de YouTube válido (11 caracteres).';
+    return;
+  }
+  currentVideoId = id;
+  isVideoValid = false;
+  btnSave.disabled = true;
+  btnSave.style.opacity = '0.45';
+  statusBox.style.background = 'rgba(0, 240, 255, 0.15)';
+  statusBox.style.color = '#00f0ff';
+  statusBox.textContent = '⏳ Comprobando permisos de reproducción con YouTube...';
+
+  const startSec = parseInt(inputStart.value, 10) || 0;
+  previewPlayer?.loadVideoById({ videoId: id, startSeconds: startSec });
+  previewPlayer?.playVideo();
 });
 
-// 3. Envío de nueva canción o clip al servidor
-formItem.addEventListener('submit', (e) => {
+document.getElementById('form-add-item').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (!isVideoValid || !currentVideoId) return;
 
-  const newItem = {
-    id: `custom-${Date.now()}`,
+  const payload = {
     type: document.getElementById('item-type').value,
     title: document.getElementById('item-title').value.trim(),
-    youtubeId: document.getElementById('item-ytid').value.trim(),
-    startSec: parseInt(document.getElementById('item-start').value, 10),
-    chorusSec: parseInt(document.getElementById('item-chorus').value, 10),
-    correctAnswer: document.getElementById('item-correct').value.trim(),
-    trapAnswer: document.getElementById('item-trap').value.trim(),
-    distractors: [
-      document.getElementById('item-d1').value.trim(),
-      document.getElementById('item-d2').value.trim()
-    ]
+    youtubeId: currentVideoId,
+    startSec: parseInt(inputStart.value, 10) || 0,
+    chorusSec: parseInt(document.getElementById('item-chorus').value, 10) || 30,
+    options: [
+      document.getElementById('opt-0').value.trim(),
+      document.getElementById('opt-1').value.trim(),
+      document.getElementById('opt-2').value.trim(),
+      document.getElementById('opt-3').value.trim()
+    ],
+    correctIndex: 0
   };
 
-  socket.emit('admin:add_item', newItem);
-  formItem.reset();
+  const res = await fetch('/api/content', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (res.ok) {
+    alert('🎉 ¡Tema guardado y listo para jugar!');
+    e.target.reset();
+    isVideoValid = false;
+    btnSave.disabled = true;
+    btnSave.style.opacity = '0.45';
+    btnSave.textContent = '⚠️ PRUEBA EL VIDEO PRIMERO';
+  }
 });

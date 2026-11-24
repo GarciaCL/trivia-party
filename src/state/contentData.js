@@ -8,7 +8,7 @@ export const ContentData = {
       correctIndex: 0
     },
     {
-      id: 'm2', type: 'music', title: 'Billie Jean - Michael Jackson', youtubeId: 'dk_MYgU_yH8',
+      id: 'm2', type: 'music', title: 'Billie Jean - Michael Jackson', youtubeId: 'sOnqjkJTMaA',
       startSec: 10, chorusSec: 42,
       options: ['Beat It - Michael Jackson', 'Billie Jean - Michael Jackson', 'Thriller - Michael Jackson', 'Bad - Michael Jackson'],
       correctIndex: 1
@@ -40,7 +40,7 @@ export const ContentData = {
       correctIndex: 2
     },
     {
-      id: 'c2', type: 'movie', title: 'Titanic', youtubeId: 'F2RnxZnubVQ',
+      id: 'c2', type: 'movie', title: 'Titanic', youtubeId: '3gK_2XdjOdY',
       startSec: 30, chorusSec: 90,
       options: ['Romeo y Julieta', 'El Gran Gatsby', 'El Diario de Noa', 'Titanic'],
       correctIndex: 3
@@ -52,7 +52,7 @@ export const ContentData = {
       correctIndex: 0
     },
     {
-      id: 'c4', type: 'movie', title: 'El Padrino', youtubeId: 'sY1S34973zA',
+      id: 'c4', type: 'movie', title: 'El Padrino', youtubeId: 'HWqKPWO5T4o',
       startSec: 15, chorusSec: 60,
       options: ['Scarface', 'El Padrino', 'Goodfellas', 'Casino'],
       correctIndex: 1

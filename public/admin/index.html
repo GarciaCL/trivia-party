@@ -3,85 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trivia Party - Super Admin</title>
+  <title>Trivia Party - Gestor de Contenido</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/styles.css">
-  <link rel="stylesheet" href="/admin/admin.css">
 </head>
-<body>
+<body style="padding: 24px; max-width: 900px; margin: 0 auto;">
 
-  <!-- Pantalla de Login de Administrador -->
-  <section id="admin-login" class="glass-card glow-pink admin-card">
-    <h1 class="admin-title">🔒 SUPER ADMIN</h1>
-    <p class="admin-sub">Acceso restringido para gestión de contenido</p>
-    <form id="form-login">
-      <input type="password" id="input-password" placeholder="Contraseña de admin" required>
-      <button type="submit" class="btn btn-login">INGRESAR</button>
-    </form>
-  </section>
+  <header class="glass-card" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h1 style="color: #00f0ff; font-size: 1.5rem;">🎛️ GESTOR DE CANCIONES Y PELÍCULAS</h1>
+    <a href="/tv" class="btn" style="background: #ff007f; color: #fff; text-decoration: none;">VOLVER A LA TV 📺</a>
+  </header>
 
-  <!-- Panel de Gestión de Contenido -->
-  <main id="admin-dashboard" class="admin-layout hidden">
-    <!-- Formulario para Añadir Contenido -->
-    <section class="glass-card glow-cyan admin-form-card">
-      <h2 class="section-title">AÑADIR CANCIÓN O ESCENA</h2>
-      <form id="form-item">
-        <div class="form-row">
-          <label>Tipo:
-            <select id="item-type">
-              <option value="music">Música</option>
-              <option value="movie">Película / Serie</option>
-            </select>
-          </label>
-          <label>Título visible:
-            <input type="text" id="item-title" placeholder="Ej: Queen - Bohemian Rhapsody" required>
-          </label>
+  <main style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Formulario de Carga -->
+    <section class="glass-card" style="padding: 24px;">
+      <h2 style="margin-bottom: 16px; color: #ffd700;">➕ Agregar Nuevo Tema</h2>
+      <form id="form-add-item" style="display: flex; flex-direction: column; gap: 12px;">
+        <select id="item-type" style="padding: 12px; border-radius: 10px; background: #140533; color: #fff; border: 1px solid #00f0ff;">
+          <option value="music">🎵 Canción (Modo Audio)</option>
+          <option value="movie">🎬 Película / Serie (Modo Video)</option>
+        </select>
+
+        <input type="text" id="item-title" placeholder="Título correcto (Ej: Thriller - Michael Jackson)" required style="padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="item-youtube" placeholder="URL o ID de YouTube" required style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+          <button type="button" id="btn-test-yt" class="btn" style="background: #00f0ff; color: #0d0221;">🔍 Probar</button>
         </div>
 
-        <div class="form-row">
-          <label>ID de YouTube:
-            <input type="text" id="item-ytid" placeholder="Ej: fJ9rUzIMcZQ" required>
-          </label>
-          <label>Seg. Inicio:
-            <input type="number" id="item-start" placeholder="45" required>
-          </label>
-          <label>Seg. Coro / Clímax:
-            <input type="number" id="item-chorus" placeholder="120" required>
-          </label>
+        <div style="display: flex; gap: 10px;">
+          <input type="number" id="item-start" placeholder="Inicio (seg)" value="15" min="0" required style="width: 50%; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+          <input type="number" id="item-chorus" placeholder="Coro/Festejo (seg)" value="45" min="0" required style="width: 50%; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
         </div>
 
-        <div class="form-row">
-          <label class="correct-field">Respuesta Correcta:
-            <input type="text" id="item-correct" placeholder="Título exacto" required>
-          </label>
-          <label class="trap-field">Opción Trampa:
-            <input type="text" id="item-trap" placeholder="Confusión típica" required>
-          </label>
-        </div>
+        <input type="text" id="opt-0" placeholder="Opción 1 (Correcta)" required style="padding: 10px; border-radius: 8px; background: rgba(0,255,136,0.1); color: #fff; border: 1px solid #00ff88;">
+        <input type="text" id="opt-1" placeholder="Opción 2 (Distractor)" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="opt-2" placeholder="Opción 3 (Distractor)" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="opt-3" placeholder="Opción 4 (Distractor)" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
 
-        <div class="form-row">
-          <label>Distractor 1:
-            <input type="text" id="item-d1" placeholder="Opción alternativa" required>
-          </label>
-          <label>Distractor 2:
-            <input type="text" id="item-d2" placeholder="Opción alternativa" required>
-          </label>
-        </div>
-
-        <button type="submit" class="btn btn-save">GUARDAR EN LA LISTA</button>
+        <button type="submit" id="btn-save-item" class="btn" disabled style="background: #ff007f; color: #fff; padding: 14px; opacity: 0.45; cursor: not-allowed;">
+          ⚠️ PRUEBA EL VIDEO PRIMERO
+        </button>
       </form>
     </section>
 
-    <!-- Lista de Contenido Cargado -->
-    <section class="glass-card glow-pink admin-list-card">
-      <h2 class="section-title">CONTENIDO ACTUAL</h2>
-      <ul id="items-list" class="content-list"></ul>
+    <!-- Vista Previa y Validador -->
+    <section class="glass-card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="color: #00f0ff;">🎬 Vista Previa y Diagnóstico</h2>
+      <div id="preview-status" style="padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); font-weight: 700;">
+        Pega un enlace de YouTube y pulsa "Probar" para verificar permisos.
+      </div>
+      <div style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden;">
+        <div id="admin-yt-player"></div>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        💡 <strong>Consejo:</strong> Si un video oficial da error de copyright, busca en YouTube la versión <em>"Lyrics"</em>, <em>"Audio"</em> o una escena subida por fans; esas casi nunca tienen bloqueo de inserción.
+      </p>
     </section>
   </main>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script type="module" src="/admin/admin.js"></script>
 </body>
 </html>

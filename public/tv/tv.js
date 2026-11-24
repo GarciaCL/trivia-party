@@ -28,6 +28,9 @@ function createYTPlayer() {
       onReady: () => {
         playerReady = true;
         if (pendingItem) { playMediaItem(pendingItem); pendingItem = null; }
+      },
+      onError: () => {
+        if (gameStarted) socket.emit('host:next_round', { category: selectedCat });
       }
     }
   });

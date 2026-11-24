@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initGameSockets } from './sockets/gameSocket.js';
+import { ContentData } from './state/contentData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,22 +19,17 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 app.use(express.static(PUBLIC_DIR));
 app.use(express.json());
 
-app.get('/tv', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'tv', 'index.html'));
+app.get('/tv', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'tv', 'index.html')));
+app.get('/play', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'play', 'index.html')));
+app.get('/admin-content', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html')));
+
+// API para guardar nuevos temas validados desde /admin-content
+app.post('/api/content', (req, res) => {
+  const newItem = ContentData.addItem(req.body);
+  res.status(201).json(newItem);
 });
 
-app.get('/play', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'play', 'index.html'));
-});
-
-app.get('/admin-content', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html'));
-});
-
-// La URL principal abre siempre la pantalla anfitriona
-app.get('/', (req, res) => {
-  res.redirect('/tv');
-});
+app.get('/', (req, res) => res.redirect('/tv'));
 
 initGameSockets(io);
 
