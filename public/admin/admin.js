@@ -3,6 +3,7 @@ let playerReady = false;
 let pendingVideo = null;
 let isVideoValid = false;
 let currentVideoId = '';
+let currentCorrectIndex = 0;
 let catalogItems = [];
 
 const statusBox = document.getElementById('preview-status');
@@ -42,6 +43,11 @@ function initPreviewPlayer() {
       },
       onStateChange: (e) => {
         if (e.data === window.YT.PlayerState.PLAYING || e.data === window.YT.PlayerState.BUFFERING) {
+          // Extraer título desde YouTube automáticamente si el campo está vacío
+          const ytTitle = previewPlayer?.getVideoData?.()?.title;
+          if (ytTitle && !inputTitle.value.trim()) {
+            inputTitle.value = ytTitle.replace(/\(Official.*?\)|\[Official.*?\]/gi, '').trim();
+          }
           statusBox.style.background = 'rgba(0, 255, 136, 0.2)';
           statusBox.style.color = '#00ff88';
           statusBox.textContent = '✅ ¡Video apto! Se reproduce y tiene permisos válidos.';
@@ -78,20 +84,14 @@ function runVideoTest(id, startSec) {
 window.onYouTubeIframeAPIReady = initPreviewPlayer;
 if (window.YT?.Player) initPreviewPlayer();
 
-inputTitle.addEventListener('blur', () => {
-  if (!document.getElementById('opt-0').value && inputTitle.value.trim()) {
-    document.getElementById('opt-0').value = inputTitle.value.trim();
-  }
-});
-
+// Generar distractores con IA y ubicar la respuesta correcta en una posición aleatoria (0-3)
 document.getElementById('btn-ai-options').addEventListener('click', async () => {
   const title = inputTitle.value.trim();
-  if (!title) return alert('Escribe primero el título de la canción o película.');
+  if (!title) return alert('Escribe primero el título (o prueba el video de YouTube para traerlo solo).');
   const btnAi = document.getElementById('btn-ai-options');
   btnAi.disabled = true;
   btnAi.textContent = '⏳...';
 
-  document.getElementById('opt-0').value = title;
   try {
     const res = await fetch('/api/generate-options', {
       method: 'POST',
@@ -100,9 +100,13 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
     });
     const data = await res.json();
     if (res.ok && data.distractors?.length === 3) {
-      document.getElementById('opt-1').value = data.distractors[0];
-      document.getElementById('opt-2').value = data.distractors[1];
-      document.getElementById('opt-3').value = data.distractors[2];
+      const randomPos = Math.floor(Math.random() * 4);
+      currentCorrectIndex = randomPos;
+      const mixed = [...data.distractors];
+      mixed.splice(randomPos, 0, title);
+      mixed.forEach((opt, i) => {
+        document.getElementById(`opt-${i}`).value = opt;
+      });
     } else {
       alert(`Error IA: ${data.error || 'Respuesta inválida de Gemini.'}`);
     }
@@ -152,6 +156,7 @@ window.editItem = (id) => {
   const item = catalogItems.find(i => String(i._id) === id);
   if (!item) return;
   editIdInput.value = item._id;
+  currentCorrectIndex = item.correctIndex ?? 0;
   document.getElementById('form-heading').textContent = '✏️ Editando Tema';
   document.getElementById('btn-cancel-edit').classList.remove('hidden');
   document.getElementById('item-type').value = item.type;
@@ -170,6 +175,7 @@ window.editItem = (id) => {
 
 document.getElementById('btn-cancel-edit').addEventListener('click', () => {
   editIdInput.value = '';
+  currentCorrectIndex = 0;
   document.getElementById('form-heading').textContent = '➕ Nuevo Tema';
   document.getElementById('btn-cancel-edit').classList.add('hidden');
   document.getElementById('form-add-item').reset();
@@ -186,14 +192,29 @@ document.getElementById('form-add-item').addEventListener('submit', async (e) =>
   e.preventDefault();
   if (!isVideoValid || !currentVideoId) return;
 
+  const opts = [0, 1, 2, 3].map(i => document.getElementById(`opt-${i}`).value.trim());
+  const title = inputTitle.value.trim();
+  // Si el usuario escribió las opciones manualmente sin usar IA, mezclar aleatoriamente
+  const foundIdx = opts.findIndex(o => o.toLowerCase() === title.toLowerCase());
+  let finalOptions = opts;
+  let finalCorrectIndex = foundIdx !== -1 ? foundIdx : currentCorrectIndex;
+
+  if (foundIdx === 0 && !editIdInput.value) {
+    const randomPos = Math.floor(Math.random() * 4);
+    const distractors = opts.slice(1);
+    distractors.splice(randomPos, 0, opts[0]);
+    finalOptions = distractors;
+    finalCorrectIndex = randomPos;
+  }
+
   const payload = {
     type: document.getElementById('item-type').value,
-    title: inputTitle.value.trim(),
+    title,
     youtubeId: currentVideoId,
     startSec: parseInt(inputStart.value, 10) || 0,
     chorusSec: parseInt(document.getElementById('item-chorus').value, 10) || 30,
-    options: [0, 1, 2, 3].map(i => document.getElementById(`opt-${i}`).value.trim()),
-    correctIndex: 0
+    options: finalOptions,
+    correctIndex: finalCorrectIndex
   };
 
   const editId = editIdInput.value;
