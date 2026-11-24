@@ -41,16 +41,16 @@ app.post('/api/generate-options', async (req, res) => {
   const kind = type === 'movie' ? 'película o serie' : 'canción con su artista';
   const prompt = `Para una trivia sobre la ${kind} "${title}", genera exactamente 3 respuestas incorrectas pero plausibles del mismo estilo, época o género. Devuelve SOLO un arreglo JSON de 3 strings.`;
 
-  // Priorizamos el modelo más rápido y limitamos cada intento a 6 segundos máximo
-  const models = ['gemini-2.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.0-flash'];
-  let lastError = 'Los servidores de IA están saturados temporalmente.';
+  // Solo modelos activos con segundo intento automático si hay pico de demanda
+  const models = ['gemini-3.8-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-flash'];
+  let lastError = 'Los servidores de IA están con alta demanda. Intenta de nuevo en unos segundos.';
 
   for (const model of models) {
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(7000),
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { responseMimeType: 'application/json' }
@@ -58,17 +58,19 @@ app.post('/api/generate-options', async (req, res) => {
       });
       const data = await response.json();
       if (!response.ok) {
-        lastError = data?.error?.message || `Error ${response.status}`;
+        if (response.status !== 404) {
+          lastError = data?.error?.message || `Error ${response.status}`;
+        }
         continue;
       }
       const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
       const match = raw.match(/\[[\s\S]*\]/);
       const parsed = JSON.parse(match ? match[0] : raw);
       if (Array.isArray(parsed) && parsed.length >= 3) {
-        return res.json({ distractors: parsed.slice(0, 3), modelUsed: model });
+        return res.json({ distractors: parsed.slice(0, 3) });
       }
     } catch (err) {
-      lastError = err.name === 'TimeoutError' ? 'Tiempo de espera agotado, reintentando...' : err.message;
+      lastError = 'La IA tardó demasiado en responder, intenta de nuevo.';
     }
   }
 

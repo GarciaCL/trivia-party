@@ -114,9 +114,16 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
 
   const btnAi = document.getElementById('btn-ai-options');
   btnAi.disabled = true;
-  btnAi.textContent = '✨...';
-  aiTimerEl.textContent = '⚡';
-  aiBanner.classList.remove('hidden');
+
+  window.Swal?.fire({
+    title: 'Generando opciones...',
+    text: `Buscando alternativas para "${title}"`,
+    background: '#140533',
+    color: '#fff',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => window.Swal.showLoading()
+  });
 
   try {
     const res = await fetch('/api/generate-options', {
@@ -133,16 +140,14 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
       mixed.forEach((opt, i) => {
         document.getElementById(`opt-${i}`).value = opt;
       });
-      notify('success', '¡Opciones listas!', `Correcta en opción #${randomPos + 1}`);
+      notify('success', '¡Opciones listas!', `Correcta ubicada en opción #${randomPos + 1}`);
     } else {
-      notify('error', 'IA ocupada', data.error || 'Intenta nuevamente en unos segundos.');
+      notify('error', 'IA temporalmente ocupada', data.error || 'Intenta nuevamente en unos segundos.');
     }
   } catch (err) {
     notify('error', 'Error de conexión', 'No se pudo contactar con el servidor.');
   } finally {
-    aiBanner.classList.add('hidden');
     btnAi.disabled = false;
-    btnAi.textContent = '✨ IA';
   }
 });
 
