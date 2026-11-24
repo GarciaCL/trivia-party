@@ -114,13 +114,9 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
 
   const btnAi = document.getElementById('btn-ai-options');
   btnAi.disabled = true;
-  btnAi.textContent = '⏳...';
+  btnAi.textContent = '✨...';
+  aiTimerEl.textContent = '⚡';
   aiBanner.classList.remove('hidden');
-
-  const startTime = Date.now();
-  const clock = setInterval(() => {
-    aiTimerEl.textContent = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-  }, 100);
 
   try {
     const res = await fetch('/api/generate-options', {
@@ -137,14 +133,13 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
       mixed.forEach((opt, i) => {
         document.getElementById(`opt-${i}`).value = opt;
       });
-      notify('success', '¡Opciones generadas!', `Respuesta correcta ubicada en la opción #${randomPos + 1}`);
+      notify('success', '¡Opciones listas!', `Correcta en opción #${randomPos + 1}`);
     } else {
-      notify('error', 'IA temporalmente ocupada', data.error || 'Intenta nuevamente en unos segundos.');
+      notify('error', 'IA ocupada', data.error || 'Intenta nuevamente en unos segundos.');
     }
   } catch (err) {
     notify('error', 'Error de conexión', 'No se pudo contactar con el servidor.');
   } finally {
-    clearInterval(clock);
     aiBanner.classList.add('hidden');
     btnAi.disabled = false;
     btnAi.textContent = '✨ IA';

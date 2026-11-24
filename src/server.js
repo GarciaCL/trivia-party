@@ -41,8 +41,8 @@ app.post('/api/generate-options', async (req, res) => {
   const kind = type === 'movie' ? 'película o serie' : 'canción con su artista';
   const prompt = `Para una trivia sobre la ${kind} "${title}", genera exactamente 3 respuestas incorrectas pero plausibles del mismo estilo, época o género. Devuelve SOLO un arreglo JSON de 3 strings.`;
 
-  // Lista de modelos en orden de prioridad: si uno tiene pico de demanda (503/429), pasa al siguiente
-  const models = ['gemini-3.8-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+  // Priorizamos el modelo más rápido y limitamos cada intento a 6 segundos máximo
+  const models = ['gemini-2.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.0-flash'];
   let lastError = 'Los servidores de IA están saturados temporalmente.';
 
   for (const model of models) {
@@ -50,6 +50,7 @@ app.post('/api/generate-options', async (req, res) => {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(6000),
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { responseMimeType: 'application/json' }
@@ -58,7 +59,7 @@ app.post('/api/generate-options', async (req, res) => {
       const data = await response.json();
       if (!response.ok) {
         lastError = data?.error?.message || `Error ${response.status}`;
-        continue; // Probar siguiente modelo
+        continue;
       }
       const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
       const match = raw.match(/\[[\s\S]*\]/);
@@ -67,7 +68,7 @@ app.post('/api/generate-options', async (req, res) => {
         return res.json({ distractors: parsed.slice(0, 3), modelUsed: model });
       }
     } catch (err) {
-      lastError = err.message;
+      lastError = err.name === 'TimeoutError' ? 'Tiempo de espera agotado, reintentando...' : err.message;
     }
   }
 
