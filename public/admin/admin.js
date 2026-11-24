@@ -1,4 +1,6 @@
 let previewPlayer = null;
+let playerReady = false;
+let pendingVideo = null;
 let isVideoValid = false;
 let currentVideoId = '';
 let catalogItems = [];
@@ -24,31 +26,58 @@ function setSaveEnabled(enabled, label) {
   btnSave.textContent = label;
 }
 
-window.onYouTubeIframeAPIReady = () => {
+function initPreviewPlayer() {
+  if (previewPlayer || !window.YT?.Player) return;
   previewPlayer = new window.YT.Player('admin-yt-player', {
-    height: '100%', width: '100%',
-    playerVars: { autoplay: 0, controls: 1, origin: window.location.origin },
+    height: '100%',
+    width: '100%',
+    playerVars: { autoplay: 1, controls: 1, playsinline: 1, origin: window.location.origin },
     events: {
+      onReady: () => {
+        playerReady = true;
+        if (pendingVideo) {
+          runVideoTest(pendingVideo.id, pendingVideo.startSec);
+          pendingVideo = null;
+        }
+      },
       onStateChange: (e) => {
-        if (e.data === window.YT.PlayerState.PLAYING) {
+        if (e.data === window.YT.PlayerState.PLAYING || e.data === window.YT.PlayerState.BUFFERING) {
           statusBox.style.background = 'rgba(0, 255, 136, 0.2)';
           statusBox.style.color = '#00ff88';
-          statusBox.textContent = '✅ ¡Video apto! Se reproduce y suena correctamente.';
+          statusBox.textContent = '✅ ¡Video apto! Se reproduce y tiene permisos válidos.';
           setSaveEnabled(true, editIdInput.value ? '💾 ACTUALIZAR TEMA' : '💾 GUARDAR EN EL CATÁLOGO');
         }
       },
       onError: (e) => {
-        const reasons = { 2: 'ID inválido.', 100: 'Video eliminado o privado.', 101: 'Bloqueado por copyright.', 150: 'Bloqueado por reclamación de estudio.' };
+        const reasons = {
+          2: 'ID de video inválido.',
+          100: 'Video eliminado o privado.',
+          101: 'Bloqueado por copyright (no permite reproducción externa).',
+          150: 'Bloqueado por reclamación de estudio/disquera.'
+        };
         statusBox.style.background = 'rgba(255, 42, 95, 0.25)';
         statusBox.style.color = '#ff4d6d';
-        statusBox.textContent = `❌ No utilizable: ${reasons[e.data] || 'Error de permisos.'}`;
+        statusBox.textContent = `❌ No utilizable: ${reasons[e.data] || 'Error de permisos en YouTube.'}`;
         setSaveEnabled(false, '⚠️ ELIGE OTRO VIDEO VÁLIDO');
       }
     }
   });
-};
+}
 
-// Autocompletar Opción 1 con el título y generar distractores con Gemini
+function runVideoTest(id, startSec) {
+  if (!playerReady || !previewPlayer?.loadVideoById) {
+    pendingVideo = { id, startSec };
+    initPreviewPlayer();
+    return;
+  }
+  previewPlayer.unMute?.();
+  previewPlayer.loadVideoById({ videoId: id, startSeconds: startSec });
+  previewPlayer.playVideo();
+}
+
+window.onYouTubeIframeAPIReady = initPreviewPlayer;
+if (window.YT?.Player) initPreviewPlayer();
+
 inputTitle.addEventListener('blur', () => {
   if (!document.getElementById('opt-0').value && inputTitle.value.trim()) {
     document.getElementById('opt-0').value = inputTitle.value.trim();
@@ -63,21 +92,26 @@ document.getElementById('btn-ai-options').addEventListener('click', async () => 
   btnAi.textContent = '⏳...';
 
   document.getElementById('opt-0').value = title;
-  const res = await fetch('/api/generate-options', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, type: document.getElementById('item-type').value })
-  });
-  const data = await res.json();
-  if (data.distractors?.length === 3) {
-    document.getElementById('opt-1').value = data.distractors[0];
-    document.getElementById('opt-2').value = data.distractors[1];
-    document.getElementById('opt-3').value = data.distractors[2];
-  } else {
-    alert(data.error || 'No se pudieron generar las opciones.');
+  try {
+    const res = await fetch('/api/generate-options', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, type: document.getElementById('item-type').value })
+    });
+    const data = await res.json();
+    if (res.ok && data.distractors?.length === 3) {
+      document.getElementById('opt-1').value = data.distractors[0];
+      document.getElementById('opt-2').value = data.distractors[1];
+      document.getElementById('opt-3').value = data.distractors[2];
+    } else {
+      alert(`Error IA: ${data.error || 'Respuesta inválida de Gemini.'}`);
+    }
+  } catch (err) {
+    alert('Error de red al conectar con el servidor.');
+  } finally {
+    btnAi.disabled = false;
+    btnAi.textContent = '✨ IA';
   }
-  btnAi.disabled = false;
-  btnAi.textContent = '✨ IA';
 });
 
 document.getElementById('btn-test-yt').addEventListener('click', () => {
@@ -92,8 +126,7 @@ document.getElementById('btn-test-yt').addEventListener('click', () => {
   statusBox.style.background = 'rgba(0, 240, 255, 0.15)';
   statusBox.style.color = '#00f0ff';
   statusBox.textContent = '⏳ Probando reproducción con YouTube...';
-  previewPlayer?.loadVideoById({ videoId: id, startSeconds: parseInt(inputStart.value, 10) || 0 });
-  previewPlayer?.playVideo();
+  runVideoTest(id, parseInt(inputStart.value, 10) || 0);
 });
 
 async function loadCatalog() {
