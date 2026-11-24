@@ -1,5 +1,6 @@
 export const ContentData = {
   items: [
+    // --- MÚSICA ---
     {
       id: 'm1', type: 'music', title: 'Gasolina - Daddy Yankee', youtubeId: 'qGKrc3A6HHM',
       startSec: 15, chorusSec: 52,
@@ -25,6 +26,14 @@ export const ContentData = {
       correctIndex: 3
     },
     {
+      id: 'm5', type: 'music', title: 'Livin on a Prayer - Bon Jovi', youtubeId: 'lDK9QqIzhwk',
+      startSec: 22, chorusSec: 84,
+      options: ['Livin on a Prayer - Bon Jovi', 'You Give Love a Bad Name - Bon Jovi', 'It is My Life - Bon Jovi', 'Always - Bon Jovi'],
+      correctIndex: 0
+    },
+
+    // --- CINE / SERIES ---
+    {
       id: 'c1', type: 'movie', title: 'Star Wars: El Imperio Contraataca', youtubeId: '_lOT2p_FCvA',
       startSec: 20, chorusSec: 100,
       options: ['Star Wars: Una Nueva Esperanza', 'Star Wars: El Retorno del Jedi', 'Star Wars: El Imperio Contraataca', 'Star Wars: La Venganza de los Sith'],
@@ -35,6 +44,18 @@ export const ContentData = {
       startSec: 30, chorusSec: 90,
       options: ['Romeo y Julieta', 'El Gran Gatsby', 'El Diario de Noa', 'Titanic'],
       correctIndex: 3
+    },
+    {
+      id: 'c3', type: 'movie', title: 'Jurassic Park', youtubeId: 'gOmfl_A1d_0',
+      startSec: 10, chorusSec: 45,
+      options: ['Jurassic Park', 'Godzilla', 'King Kong', 'Mundo Jurásico'],
+      correctIndex: 0
+    },
+    {
+      id: 'c4', type: 'movie', title: 'El Padrino', youtubeId: 'sY1S34973zA',
+      startSec: 15, chorusSec: 60,
+      options: ['Scarface', 'El Padrino', 'Goodfellas', 'Casino'],
+      correctIndex: 1
     }
   ],
 

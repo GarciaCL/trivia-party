@@ -16,8 +16,8 @@ export function initGameSockets(io) {
       io.emit('game:mode_changed', { mode });
     });
 
-    socket.on('host:next_round', () => {
-      const item = ContentData.getRandomItem();
+    socket.on('host:next_round', ({ category = 'all' } = {}) => {
+      const item = ContentData.getRandomItem(category);
       if (!item) return;
       GameState.startNewRound(item);
       io.emit('round:new', {

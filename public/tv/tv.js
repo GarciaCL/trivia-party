@@ -11,31 +11,62 @@ const musicVisualizer = document.getElementById('music-visualizer');
 const mediaStatusText = document.getElementById('media-status-text');
 const btnNextRound = document.getElementById('btn-next-round');
 const btnToggleMode = document.getElementById('btn-toggle-mode');
+const badgeType = document.getElementById('badge-type');
 const hostControls = document.getElementById('host-controls');
 const podiumScreen = document.getElementById('podium-screen');
 const podiumContainer = document.getElementById('podium-container');
 
-let player = null, currentItem = null, gameStarted = false, currentMode = 'auto', selectedCat = 'all', allTeams = [];
+let player = null, playerReady = false, pendingItem = null;
+let currentItem = null, gameStarted = false, currentMode = 'auto', selectedCat = 'all', allTeams = [];
 
-window.onYouTubeIframeAPIReady = () => {
-  player = new YT.Player('youtube-player', {
+function createYTPlayer() {
+  if (player || !window.YT?.Player) return;
+  player = new window.YT.Player('youtube-player', {
     height: '100%', width: '100%',
-    playerVars: { autoplay: 1, controls: 0, disablekb: 1 }
+    playerVars: { autoplay: 1, controls: 0, disablekb: 1, rel: 0, playsinline: 1, origin: window.location.origin },
+    events: {
+      onReady: () => {
+        playerReady = true;
+        if (pendingItem) { playMediaItem(pendingItem); pendingItem = null; }
+      }
+    }
   });
-};
+}
 
-// Iniciar el asistente de 3 pasos en el lobby
+window.onYouTubeIframeAPIReady = createYTPlayer;
+if (window.YT?.Player) createYTPlayer();
+
+function playMediaItem(item) {
+  currentItem = item;
+  buzzerBanner.classList.add('hidden');
+  hostControls.classList.add('hidden');
+  musicVisualizer.classList.toggle('hidden', item.type !== 'music');
+  if (item.type === 'music') mediaStatusText.textContent = '¡ESCUCHA CON ATENCIÓN!';
+
+  if (playerReady && player?.loadVideoById) {
+    player.unMute();
+    player.setVolume(100);
+    player.loadVideoById({ videoId: item.youtubeId, startSeconds: item.startSec });
+    player.playVideo();
+  } else {
+    pendingItem = item;
+  }
+}
+
 initSetupWizard({
   onReadyToStart: ({ mode, category }) => {
     currentMode = mode;
     selectedCat = category;
     btnToggleMode.textContent = mode === 'host' ? 'MODO: PRESENTADOR [M]' : 'MODO: AUTO [M]';
-    socket.emit('host:toggle_mode', { mode: currentMode });
+    const catNames = { all: 'MIXTO', music: 'SÓLO MÚSICA', movie: 'SÓLO CINE' };
+    if (badgeType) badgeType.textContent = `CATEGORÍA: ${catNames[category] || 'MIXTO'}`;
 
+    socket.emit('host:toggle_mode', { mode: currentMode });
     gameStarted = true;
     welcomeLobby.classList.add('hidden');
     podiumScreen?.classList.add('hidden');
-    player?.unMute?.();
+
+    if (playerReady && player?.unMute) { player.unMute(); player.setVolume(100); }
     socket.emit('host:next_round', { category: selectedCat });
   }
 });
@@ -92,17 +123,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 socket.on('round:new', ({ item }) => {
-  if (!gameStarted) return;
-  currentItem = item;
-  buzzerBanner.classList.add('hidden');
-  hostControls.classList.add('hidden');
-  musicVisualizer.classList.toggle('hidden', item.type !== 'music');
-  if (item.type === 'music') mediaStatusText.textContent = '¡ESCUCHA CON ATENCIÓN!';
-  if (player?.loadVideoById) {
-    player.unMute(); player.setVolume(100);
-    player.loadVideoById({ videoId: item.youtubeId, startSeconds: item.startSec });
-    player.playVideo();
-  }
+  if (gameStarted) playMediaItem(item);
 });
 
 socket.on('buzzer:locked', ({ teamName }) => {
@@ -121,7 +142,8 @@ socket.on('round:success', ({ team, chorusSec }) => {
   setTimeout(() => {
     buzzerBanner.classList.add('hidden');
     if (currentItem?.type === 'music') mediaStatusText.textContent = `¡FESTEJO! 🎶 ${currentItem.title}`;
-    player?.seekTo?.(chorusSec, true); player?.playVideo?.();
+    player?.seekTo?.(chorusSec, true);
+    player?.playVideo?.();
   }, 1200);
 });
 
