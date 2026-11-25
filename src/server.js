@@ -39,20 +39,58 @@ app.post('/api/generate-options', async (req, res) => {
   const groqKey = process.env.GROQ_API_KEY?.trim();
 
   if (!geminiKey && !groqKey) {
-    return res.status(500).json({ error: 'Configura GEMINI_API_KEY o GROQ_API_KEY en Render.' });
+    return res.status(500).json({ error: 'No se detectó GEMINI_API_KEY ni GROQ_API_KEY en Render.' });
   }
 
   const kind = type === 'movie' ? 'película o serie' : 'canción con su artista';
-  const prompt = `Para una trivia sobre la ${kind} "${title}", genera exactamente 3 respuestas incorrectas pero plausibles del mismo estilo, época o género. Devuelve SOLO un arreglo JSON de 3 strings, sin texto adicional. Ejemplo: ["Opción A", "Opción B", "Opción C"]`;
+  const prompt = `Para una trivia sobre la ${kind} "${title}", genera exactamente 3 respuestas incorrectas pero plausibles del mismo estilo, época o género. Devuelve SOLO un arreglo JSON de 3 strings, sin texto extra. Ejemplo: ["Opción A", "Opción B", "Opción C"]`;
 
-  // 1. Primer intento: Google Gemini (máximo 5 segundos de espera)
+  const errors = [];
+
+  // 1. Prioridad: Groq (ultra rápido, < 1s)
+  if (groqKey) {
+    for (const model of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          signal: AbortSignal.timeout(6000),
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7
+          })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          const raw = data?.choices?.[0]?.message?.content || '[]';
+          const match = raw.match(/\[[\s\S]*\]/);
+          const parsed = JSON.parse(match ? match[0] : raw);
+          if (Array.isArray(parsed) && parsed.length >= 3) {
+            return res.json({ distractors: parsed.slice(0, 3), provider: `Groq (${model})` });
+          }
+        } else {
+          errors.push(`Groq ${model}: ${data?.error?.message || response.status}`);
+        }
+      } catch (err) {
+        errors.push(`Groq ${model}: ${err.message}`);
+      }
+    }
+  } else {
+    errors.push('GROQ_API_KEY vacía en Render');
+  }
+
+  // 2. Respaldo: Google Gemini
   if (geminiKey) {
-    for (const model of ['gemini-3.8-flash', 'gemini-2.5-flash-lite']) {
+    for (const model of ['gemini-2.5-flash-lite', 'gemini-3.8-flash']) {
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(6000),
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: 'application/json' }
@@ -64,44 +102,19 @@ app.post('/api/generate-options', async (req, res) => {
           const match = raw.match(/\[[\s\S]*\]/);
           const parsed = JSON.parse(match ? match[0] : raw);
           if (Array.isArray(parsed) && parsed.length >= 3) {
-            return res.json({ distractors: parsed.slice(0, 3), provider: 'Gemini' });
+            return res.json({ distractors: parsed.slice(0, 3), provider: `Gemini (${model})` });
           }
+        } else {
+          errors.push(`Gemini ${model}: ${data?.error?.message || response.status}`);
         }
-      } catch (_) {
-        // Si Gemini está saturado o tarda más de 5s, pasa directo al respaldo
+      } catch (err) {
+        errors.push(`Gemini ${model}: ${err.message}`);
       }
     }
   }
 
-  // 2. Segundo intento (Respaldo ultra rápido): Groq (Llama 3.3 70B)
-  if (groqKey) {
-    try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        signal: AbortSignal.timeout(6000),
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7
-        })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        const raw = data?.choices?.[0]?.message?.content || '[]';
-        const match = raw.match(/\[[\s\S]*\]/);
-        const parsed = JSON.parse(match ? match[0] : raw);
-        if (Array.isArray(parsed) && parsed.length >= 3) {
-          return res.json({ distractors: parsed.slice(0, 3), provider: 'Groq' });
-        }
-      }
-    } catch (_) {}
-  }
-
-  res.status(503).json({ error: 'Ambos motores de IA están ocupados. Intenta nuevamente en unos segundos.' });
+  console.error('❌ Fallo motores IA:', errors);
+  res.status(503).json({ error: errors.join(' | ') });
 });
 
 app.get('/', (req, res) => res.redirect('/tv'));
