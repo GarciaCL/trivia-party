@@ -85,7 +85,7 @@ app.post('/api/generate-options', async (req, res) => {
 
   // 2. Respaldo: Google Gemini
   if (geminiKey) {
-    for (const model of ['gemini-2.5-flash-lite', 'gemini-3.8-flash']) {
+    for (const model of ['gemini-3.5-flash-lite', 'gemini-3.8-flash']) {
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
           method: 'POST',
