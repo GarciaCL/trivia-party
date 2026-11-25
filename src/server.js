@@ -47,10 +47,19 @@ app.post('/api/generate-options', async (req, res) => {
 
   const errors = [];
 
-  // 1. Prioridad: Groq (ultra rápido, < 1s)
+  // 1. Prioridad: Groq con autodetección de modelos disponibles en tu cuenta
   if (groqKey) {
-    for (const model of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
-      try {
+    try {
+      const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${groqKey}` },
+        signal: AbortSignal.timeout(4000)
+      });
+      const modelsData = await modelsRes.json();
+      const availableModels = (modelsData?.data || [])
+        .map(m => m.id)
+        .filter(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('tts'));
+
+      for (const model of availableModels.slice(0, 3)) {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -75,12 +84,10 @@ app.post('/api/generate-options', async (req, res) => {
         } else {
           errors.push(`Groq ${model}: ${data?.error?.message || response.status}`);
         }
-      } catch (err) {
-        errors.push(`Groq ${model}: ${err.message}`);
       }
+    } catch (err) {
+      errors.push(`Groq: ${err.message}`);
     }
-  } else {
-    errors.push('GROQ_API_KEY vacía en Render');
   }
 
   // 2. Respaldo: Google Gemini
