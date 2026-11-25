@@ -33,7 +33,7 @@ app.delete('/api/content/:id', async (req, res) => {
 });
 
 // API IA: Generar 3 distractores basados en el título
-aapp.post('/api/generate-options', async (req, res) => {
+app.post('/api/generate-options', async (req, res) => {
   const { title, type } = req.body;
   const geminiKey = process.env.GEMINI_API_KEY?.trim();
   const groqKey = process.env.GROQ_API_KEY?.trim();
