@@ -3,66 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Trivia Party - Mando Móvil</title>
+  <title>Trivia Party - Jugador</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="stylesheet" href="/play/play.css">
 </head>
 <body>
 
-  <!-- Vista 1: Ingreso de Equipo -->
-  <section id="login-view" class="play-view glass-card">
-    <h1 class="play-title">TRIVIA PARTY</h1>
-    <p class="play-subtitle">Ingresa el nombre de tu equipo para jugar:</p>
-    <form id="form-join">
-      <input type="text" id="input-team-name" placeholder="Nombre de tu equipo" maxlength="20" required autocomplete="off">
-      <button type="submit" class="btn btn-join">¡ENTRAR AL JUEGO! 🚀</button>
-    </form>
-    <div class="ad-slot" style="margin-top: 24px; width: 100%;">Publicidad / AdWords</div>
-  </section>
+  <!-- Pantalla 1: Ingreso con PIN + Nombre de Grupo -->
+  <main id="screen-join" class="play-container">
+    <div class="glass-card join-card">
+      <h1 class="brand-title">🎉 TRIVIA PARTY</h1>
+      <p class="subtitle">Ingresa el PIN de la TV y el nombre de tu grupo</p>
 
-  <!-- Vista 2 y 3: Juego Activo -->
-  <section id="game-view" class="play-view hidden">
-    <header class="team-bar glass-card">
-      <span id="player-team-display">Equipo</span>
-      <span id="player-score-display" class="team-score">0 pts</span>
+      <input type="tel" id="input-room-pin" maxlength="4" placeholder="PIN de sala (4 dígitos)" autocomplete="off"
+        style="text-align:center; letter-spacing:6px; font-size:1.3rem; font-weight:900; margin-bottom:10px;">
+      <input type="text" id="input-team-name" maxlength="18" placeholder="Ej: Los Invencibles" autocomplete="off">
+      <p id="join-error-msg" style="color:#ff4d6d; font-size:0.85rem; font-weight:700; min-height:20px; margin:6px 0;"></p>
+      <button id="btn-join" class="btn btn-primary">UNIRSE A LA SALA 🚀</button>
+    </div>
+    <div class="ad-slot ad-banner-bottom">Espacio Publicitario</div>
+  </main>
+
+  <!-- Pantalla 2: Sala de Espera (Votación de Anfitrión + Config del Anfitrión) -->
+  <main id="screen-lobby" class="play-container hidden">
+    <header class="player-header">
+      <span id="lobby-team-badge" class="team-badge">Equipo</span>
+      <span id="lobby-pin-badge" class="score-badge">PIN: ----</span>
     </header>
 
-    <!-- Buzzer 3D -->
-    <div id="buzzer-box" class="buzzer-container">
-      <button id="btn-buzzer" class="buzzer-btn">
-        <span class="buzzer-text">¡ME LA SÉ!</span>
-      </button>
-      <p id="buzzer-hint" class="buzzer-hint">¡Pulsa rápido cuando reconozcas el tema!</p>
-    </div>
-
-    <!-- Modo Presentador: Hablar en voz alta -->
-    <div id="host-mode-banner" class="glass-card hidden" style="padding: 24px; width: 100%; margin: auto 0;">
-      <p style="font-size: 3rem; margin-bottom: 10px;">🎤</p>
-      <h2 style="color: var(--neon-cyan); margin-bottom: 8px;">¡HABLA EN VOZ ALTA!</h2>
-      <p style="color: var(--text-muted);">El presentador está calificando tu respuesta.</p>
-    </div>
-
-    <!-- Bloqueo de Turno / Robo -->
-    <div id="locked-banner" class="glass-card hidden" style="padding: 24px; width: 100%; margin: auto 0;">
-      <p style="font-size: 3rem; margin-bottom: 10px;">🔒</p>
-      <h2 id="locked-msg" style="color: var(--neon-yellow); margin-bottom: 8px;">¡Turno Bloqueado!</h2>
-      <p id="locked-team-name" style="color: var(--text-muted);">Otro equipo está respondiendo...</p>
-    </div>
-
-    <!-- 4 Opciones 2x2 -->
-    <div id="options-panel" class="hidden" style="width: 100%; margin: auto 0;">
-      <div class="timer-wrapper">
-        <span id="timer-countdown" class="timer-countdown">5s</span>
-        <div id="timer-progress" class="timer-progress"></div>
+    <!-- Votación por mayoría para elegir Anfitrión -->
+    <section class="glass-card" style="width:100%; padding:18px; margin-bottom:14px;">
+      <h2 style="font-size:1.05rem; color:#00f0ff; margin-bottom:6px;">👑 ¿Quién controla el juego?</h2>
+      <p style="font-size:0.82rem; color:#e0d4fc; margin-bottom:12px;">Voten por mayoría quién tendrá el botón de siguiente ronda:</p>
+      <div id="host-vote-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <div id="host-chosen-banner" style="margin-top:12px; padding:10px; border-radius:10px; background:rgba(255,215,0,0.15); color:#ffd700; font-weight:800; font-size:0.88rem; text-align:center;">
+        Esperando votos de los grupos...
       </div>
-      <div id="options-grid" class="options-grid"></div>
-    </div>
+    </section>
 
-    <div class="ad-slot" style="margin-top: 20px; width: 100%;">Publicidad / AdWords</div>
-  </section>
+    <!-- Panel exclusivo del Anfitrión Elegido (invisible para los demás) -->
+    <section id="host-setup-card" class="glass-card hidden" style="width:100%; padding:18px; border:2px solid #ffd700;">
+      <h2 style="font-size:1.05rem; color:#ffd700; margin-bottom:12px;">🎛️ Eres el Anfitrión — Configura la Partida</h2>
+
+      <label style="display:block; font-size:0.8rem; color:#e0d4fc; margin-bottom:4px;">Modalidad de juego:</label>
+      <select id="host-select-mode" style="width:100%; padding:10px; border-radius:10px; background:#140533; color:#fff; border:1px solid #00f0ff; margin-bottom:10px; font-weight:700;">
+        <option value="auto">🤖 Todos Juegan (4 opciones en celular)</option>
+        <option value="host">🎤 Con Presentador (Tú validas las respuestas)</option>
+      </select>
+
+      <label style="display:block; font-size:0.8rem; color:#e0d4fc; margin-bottom:4px;">Categoría:</label>
+      <select id="host-select-cat" style="width:100%; padding:10px; border-radius:10px; background:#140533; color:#fff; border:1px solid #00f0ff; margin-bottom:14px; font-weight:700;">
+        <option value="all">🎲 Mixto (Música + Cine)</option>
+        <option value="music">🎵 Solo Música</option>
+        <option value="movie">🎬 Solo Cine y Series</option>
+      </select>
+
+      <button id="btn-host-start-game" class="btn btn-primary" style="width:100%;">🚀 INICIAR PARTIDA</button>
+    </section>
+  </main>
+
+  <!-- Pantalla 3: Juego Activo -->
+  <main id="screen-game" class="play-container hidden">
+    <header class="player-header">
+      <span id="header-team-name" class="team-badge">Equipo</span>
+      <span id="header-team-score" class="score-badge">0 pts</span>
+    </header>
+
+    <!-- Panel exclusivo del Anfitrión durante la partida (invisible para los demás jugadores) -->
+    <section id="host-live-controls" class="glass-card hidden" style="width:100%; padding:12px; margin-bottom:12px; border:1px solid #ffd700; display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:0.78rem; color:#ffd700; font-weight:800; text-align:center;">👑 CONTROLES DE ANFITRIÓN</div>
+      <div id="host-judge-row" class="hidden" style="display:flex; gap:8px;">
+        <button id="btn-judge-ok" class="btn" style="flex:1; background:#00ff88; color:#0d0221; padding:10px;">✅ CORRECTO</button>
+        <button id="btn-judge-fail" class="btn" style="flex:1; background:#ff2a5f; color:#fff; padding:10px;">❌ INCORRECTO</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="btn-host-next-round" class="btn" style="flex:2; background:#00f0ff; color:#0d0221; padding:10px; font-size:0.9rem;">⏭️ SIGUIENTE RONDA</button>
+        <button id="btn-host-end-game" class="btn" style="flex:1; background:rgba(255,255,255,0.15); color:#fff; padding:10px; font-size:0.8rem;">🏆 FIN</button>
+      </div>
+    </section>
+
+    <!-- Vista Buzzer (Inicia DESHABILITADO hasta que empiece la ronda) -->
+    <section id="view-buzzer" class="game-zone">
+      <button id="btn-buzzer" class="buzzer-btn" disabled style="opacity:0.4; cursor:not-allowed;">
+        <span>ESPERA...</span>
+      </button>
+      <p id="buzzer-hint" class="hint-text">Esperando que inicie la ronda en la TV...</p>
+    </section>
+
+    <!-- Vista 4 Opciones (Mantiene tus clases originales .opt-orange, .opt-cyan, .opt-yellow, .opt-pink) -->
+    <section id="view-options" class="game-zone hidden">
+      <h2 class="prompt-title">¡ELIGE TU RESPUESTA!</h2>
+      <div id="options-grid" class="options-grid">
+        <button class="option-btn opt-orange" data-index="0">Opción A</button>
+        <button class="option-btn opt-cyan" data-index="1">Opción B</button>
+        <button class="option-btn opt-yellow" data-index="2">Opción C</button>
+        <button class="option-btn opt-pink" data-index="3">Opción D</button>
+      </div>
+    </section>
+
+    <!-- Vista Espera / Bloqueo / Resultado -->
+    <section id="view-status" class="game-zone hidden">
+      <div class="glass-card status-card">
+        <div id="status-icon" class="status-icon">⏳</div>
+        <h2 id="status-title">¡Otro equipo fue más rápido!</h2>
+        <p id="status-desc">Prepárate por si fallan...</p>
+      </div>
+    </section>
+
+    <div class="ad-slot ad-banner-bottom">Espacio Publicitario</div>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="/play/play.js"></script>
