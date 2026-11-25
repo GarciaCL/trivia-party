@@ -175,30 +175,73 @@ function buildRowHTML(item) {
   `;
 }
 
-function renderCatalogLists() {
-  const qMusic = searchMusic.value.toLowerCase().trim();
-  const qMovie = searchMovie.value.toLowerCase().trim();
+const ITEMS_PER_PAGE = 10;
+let musicPage = 1;
+let moviePage = 1;
 
+function renderPaginatedColumn({ items, query, page, setPage, listEl, pagerEl, emptyMsg }) {
+  const filtered = items.filter(i =>
+    i.title.toLowerCase().includes(query) || i.youtubeId.toLowerCase().includes(query)
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  if (safePage !== page) setPage(safePage);
+
+  const start = (safePage - 1) * ITEMS_PER_PAGE;
+  const slice = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+  listEl.innerHTML = slice.length
+    ? slice.map(buildRowHTML).join('')
+    : `<p style="color:#9a8c98; font-size:0.85rem; text-align:center; padding:24px;">${emptyMsg}</p>`;
+
+  if (filtered.length <= ITEMS_PER_PAGE) {
+    pagerEl.innerHTML = `<span>Mostrando ${filtered.length} de ${filtered.length}</span>`;
+    return;
+  }
+
+  pagerEl.innerHTML = `
+    <button type="button" class="pager-btn" ${safePage === 1 ? 'disabled' : ''} data-dir="-1">◀ Anterior</button>
+    <span>Pág. <strong>${safePage}</strong> de ${totalPages} (${filtered.length} resultados)</span>
+    <button type="button" class="pager-btn" ${safePage === totalPages ? 'disabled' : ''} data-dir="1">Siguiente ▶</button>
+  `;
+  pagerEl.querySelectorAll('.pager-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setPage(safePage + Number(btn.dataset.dir));
+      renderCatalogLists();
+    });
+  });
+}
+
+function renderCatalogLists() {
   const allMusic = catalogItems.filter(i => i.type === 'music');
   const allMovies = catalogItems.filter(i => i.type === 'movie');
 
   document.getElementById('music-count').textContent = allMusic.length;
   document.getElementById('movie-count').textContent = allMovies.length;
 
-  const filteredMusic = allMusic.filter(i => i.title.toLowerCase().includes(qMusic));
-  const filteredMovies = allMovies.filter(i => i.title.toLowerCase().includes(qMovie));
+  renderPaginatedColumn({
+    items: allMusic,
+    query: searchMusic.value.toLowerCase().trim(),
+    page: musicPage,
+    setPage: (p) => { musicPage = p; },
+    listEl: document.getElementById('music-list'),
+    pagerEl: document.getElementById('music-pager'),
+    emptyMsg: 'Sin canciones que coincidan.'
+  });
 
-  document.getElementById('music-list').innerHTML = filteredMusic.length
-    ? filteredMusic.map(buildRowHTML).join('')
-    : '<p style="color:#9a8c98; font-size:0.85rem; text-align:center; padding:16px;">Sin canciones que coincidan.</p>';
-
-  document.getElementById('movie-list').innerHTML = filteredMovies.length
-    ? filteredMovies.map(buildRowHTML).join('')
-    : '<p style="color:#9a8c98; font-size:0.85rem; text-align:center; padding:16px;">Sin películas que coincidan.</p>';
+  renderPaginatedColumn({
+    items: allMovies,
+    query: searchMovie.value.toLowerCase().trim(),
+    page: moviePage,
+    setPage: (p) => { moviePage = p; },
+    listEl: document.getElementById('movie-list'),
+    pagerEl: document.getElementById('movie-pager'),
+    emptyMsg: 'Sin películas que coincidan.'
+  });
 }
 
-searchMusic.addEventListener('input', renderCatalogLists);
-searchMovie.addEventListener('input', renderCatalogLists);
+searchMusic.addEventListener('input', () => { musicPage = 1; renderCatalogLists(); });
+searchMovie.addEventListener('input', () => { moviePage = 1; renderCatalogLists(); });
 
 async function loadCatalog() {
   const res = await fetch('/api/content');
