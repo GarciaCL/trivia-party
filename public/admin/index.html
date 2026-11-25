@@ -8,69 +8,111 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .admin-shell { padding: 20px; max-width: 1180px; margin: 0 auto; }
+    .admin-topbar {
+      padding: 16px 24px; display: flex; justify-content: space-between;
+      align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 22px;
+    }
+    .admin-grid-top {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 24px;
+    }
+    .catalog-columns {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+    }
+    .catalog-scroll {
+      max-height: 440px; overflow-y: auto; padding-right: 6px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .catalog-scroll::-webkit-scrollbar { width: 6px; }
+    .catalog-scroll::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.35); border-radius: 6px; }
+    .cat-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      padding: 9px 12px; background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px;
+      transition: background 0.15s ease;
+    }
+    .cat-row:hover { background: rgba(255, 255, 255, 0.1); }
+    .cat-info { min-width: 0; flex: 1; }
+    .cat-title {
+      font-size: 0.9rem; font-weight: 700; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cat-meta { font-size: 0.75rem; color: #c7b8ea; margin-top: 2px; }
+    .search-box {
+      width: 100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff; font-size: 0.85rem;
+    }
+    .search-box:focus { outline: none; border-color: #00f0ff; }
+    @media (max-width: 860px) {
+      .admin-grid-top, .catalog-columns { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-<body style="padding: 24px; max-width: 1050px; margin: 0 auto;">
+<body class="admin-shell">
 
-  <header class="glass-card" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-    <h1 style="color: #00f0ff; font-size: 1.4rem;">🎛️ GESTOR DE CATÁLOGO E IA</h1>
-    <a href="/tv" class="btn" style="background: #ff007f; color: #fff; text-decoration: none;">VOLVER A LA TV 📺</a>
+  <header class="glass-card admin-topbar">
+    <h1 style="color: #00f0ff; font-size: 1.35rem; letter-spacing: 0.5px;">🎛️ GESTOR DE CATÁLOGO E IA</h1>
+    <a href="/tv" class="btn" style="background: #ff007f; color: #fff; text-decoration: none; padding: 10px 18px; font-size: 0.9rem;">VOLVER A LA TV 📺</a>
   </header>
 
-  <main style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
-    <!-- Formulario Crear / Editar -->
-    <section class="glass-card" style="padding: 24px;">
+  <main class="admin-grid-top">
+    <!-- Formulario Crear / Editar (Orden lógico: YouTube -> Título + IA -> Tiempos -> Opciones) -->
+    <section class="glass-card" style="padding: 22px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <h2 id="form-heading" style="color: #ffd700;">➕ Nuevo Tema</h2>
-        <button type="button" id="btn-cancel-edit" class="btn hidden" style="background: rgba(255,255,255,0.15); color: #fff; padding: 6px 12px; font-size: 0.85rem;">Cancelar edición</button>
+        <h2 id="form-heading" style="color: #ffd700; font-size: 1.15rem;">➕ Nuevo Tema</h2>
+        <button type="button" id="btn-cancel-edit" class="btn hidden" style="background: rgba(255,255,255,0.15); color: #fff; padding: 6px 12px; font-size: 0.8rem;">Cancelar edición</button>
       </div>
 
-      <form id="form-add-item" style="display: flex; flex-direction: column; gap: 12px;">
+      <form id="form-add-item" style="display: flex; flex-direction: column; gap: 11px;">
         <input type="hidden" id="edit-item-id">
-        <select id="item-type" style="padding: 12px; border-radius: 10px; background: #140533; color: #fff; border: 1px solid #00f0ff;">
+
+        <select id="item-type" style="padding: 11px; border-radius: 10px; background: #140533; color: #fff; border: 1px solid #00f0ff; font-weight: 600;">
           <option value="music">🎵 Canción (Modo Audio)</option>
           <option value="movie">🎬 Película / Serie (Modo Video)</option>
         </select>
 
+        <!-- Paso 1: Enlace de YouTube -->
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="item-title" placeholder="Título (Ej: Thriller - Michael Jackson)" required style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-          <button type="button" id="btn-ai-options" class="btn" style="background: linear-gradient(135deg, #9d4edd, #ff007f); color: #fff; min-width: 90px;">✨ IA</button>
+          <input type="text" id="item-youtube" placeholder="1. Pega URL o ID de YouTube" required style="flex: 1; padding: 11px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+          <button type="button" id="btn-test-yt" class="btn" style="background: #00f0ff; color: #0d0221; padding: 0 16px;">🔍 Probar</button>
         </div>
 
-        <!-- Indicador de progreso mientras trabaja la IA -->
-        <div id="ai-loading-banner" class="hidden" style="padding: 10px 14px; border-radius: 10px; background: rgba(157, 78, 221, 0.25); border: 1px solid #9d4edd; color: #e0d4fc; font-size: 0.88rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
-          <span>🧠 Pensando opciones con Gemini IA...</span>
-          <span id="ai-timer" style="color: #00f0ff;">0.0s</span>
-        </div>
-
+        <!-- Paso 2: Título (se autocompleta desde YouTube) + Botón IA -->
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="item-youtube" placeholder="URL o ID de YouTube" required style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-          <button type="button" id="btn-test-yt" class="btn" style="background: #00f0ff; color: #0d0221;">🔍 Probar</button>
+          <input type="text" id="item-title" placeholder="2. Título (se trae de YouTube o escríbelo)" required style="flex: 1; padding: 11px; border-radius: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+          <button type="button" id="btn-ai-options" class="btn" style="background: linear-gradient(135deg, #9d4edd, #ff007f); color: #fff; padding: 0 16px;">✨ IA</button>
         </div>
 
+        <!-- Paso 3: Tiempos -->
         <div style="display: flex; gap: 10px;">
-          <label style="flex: 1; font-size: 0.85rem; color: #e0d4fc;">Inicio (seg):
-            <input type="number" id="item-start" value="15" min="0" required style="width: 100%; margin-top: 4px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+          <label style="flex: 1; font-size: 0.8rem; color: #e0d4fc;">Inicio (seg):
+            <input type="number" id="item-start" value="15" min="0" required style="width: 100%; margin-top: 4px; padding: 9px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
           </label>
-          <label style="flex: 1; font-size: 0.85rem; color: #e0d4fc;">Coro/Festejo (seg):
-            <input type="number" id="item-chorus" value="45" min="0" required style="width: 100%; margin-top: 4px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+          <label style="flex: 1; font-size: 0.8rem; color: #e0d4fc;">Coro/Festejo (seg):
+            <input type="number" id="item-chorus" value="45" min="0" required style="width: 100%; margin-top: 4px; padding: 9px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
           </label>
         </div>
 
-        <input type="text" id="opt-0" placeholder="Opción 1" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="text" id="opt-1" placeholder="Opción 2" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="text" id="opt-2" placeholder="Opción 3" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="text" id="opt-3" placeholder="Opción 4" required style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+        <!-- Paso 4: Opciones -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <input type="text" id="opt-0" placeholder="Opción 1" required style="padding: 9px 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">
+          <input type="text" id="opt-1" placeholder="Opción 2" required style="padding: 9px 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">
+          <input type="text" id="opt-2" placeholder="Opción 3" required style="padding: 9px 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">
+          <input type="text" id="opt-3" placeholder="Opción 4" required style="padding: 9px 10px; border-radius: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 0.85rem;">
+        </div>
 
-        <button type="submit" id="btn-save-item" class="btn" disabled style="background: #ff007f; color: #fff; padding: 14px; opacity: 0.45; cursor: not-allowed;">
+        <button type="submit" id="btn-save-item" class="btn" disabled style="background: #ff007f; color: #fff; padding: 13px; margin-top: 4px; opacity: 0.45; cursor: not-allowed;">
           ⚠️ PRUEBA EL VIDEO PRIMERO
         </button>
       </form>
     </section>
 
     <!-- Vista Previa -->
-    <section class="glass-card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-      <h2 style="color: #00f0ff;">🎬 Vista Previa y Diagnóstico</h2>
-      <div id="preview-status" style="padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.08); font-weight: 700;">
+    <section class="glass-card" style="padding: 22px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 style="color: #00f0ff; font-size: 1.15rem;">🎬 Vista Previa y Diagnóstico</h2>
+      <div id="preview-status" style="padding: 11px 14px; border-radius: 10px; background: rgba(255,255,255,0.08); font-size: 0.88rem; font-weight: 700;">
         Pega un enlace de YouTube y pulsa "Probar" para verificar permisos.
       </div>
       <div style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden;">
@@ -79,10 +121,25 @@
     </section>
   </main>
 
-  <!-- Listado de Catálogo Existente -->
-  <section class="glass-card" style="padding: 24px;">
-    <h2 style="color: #ffd700; margin-bottom: 16px;">📚 Catálogo Guardado (<span id="catalog-count">0</span>)</h2>
-    <div id="catalog-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+  <!-- Catálogo Dividido en Música y Películas con Buscador -->
+  <section class="catalog-columns">
+    <!-- Columna Canciones -->
+    <div class="glass-card" style="padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2 style="color: #ff4d94; font-size: 1.1rem;">🎵 Canciones (<span id="music-count">0</span>)</h2>
+      </div>
+      <input type="text" id="search-music" class="search-box" placeholder="🔍 Buscar canción o artista...">
+      <div id="music-list" class="catalog-scroll"></div>
+    </div>
+
+    <!-- Columna Películas / Series -->
+    <div class="glass-card" style="padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2 style="color: #ffd700; font-size: 1.1rem;">🎬 Películas / Series (<span id="movie-count">0</span>)</h2>
+      </div>
+      <input type="text" id="search-movie" class="search-box" placeholder="🔍 Buscar película o serie...">
+      <div id="movie-list" class="catalog-scroll"></div>
+    </div>
   </section>
 
   <script src="https://www.youtube.com/iframe_api"></script>

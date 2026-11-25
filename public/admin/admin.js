@@ -12,13 +12,12 @@ const inputYoutube = document.getElementById('item-youtube');
 const inputStart = document.getElementById('item-start');
 const inputTitle = document.getElementById('item-title');
 const editIdInput = document.getElementById('edit-item-id');
-const aiBanner = document.getElementById('ai-loading-banner');
-const aiTimerEl = document.getElementById('ai-timer');
+const searchMusic = document.getElementById('search-music');
+const searchMovie = document.getElementById('search-movie');
 
-// Helper de SweetAlert2 con tema oscuro Trivia Party
 const notify = (icon, title, text = '') => window.Swal?.fire({
   icon, title, text, background: '#140533', color: '#fff',
-  confirmButtonColor: '#ff007f', timer: icon === 'success' ? 2200 : undefined,
+  confirmButtonColor: '#ff007f', timer: icon === 'success' ? 2000 : undefined,
   showConfirmButton: icon !== 'success'
 });
 
@@ -107,10 +106,9 @@ function runVideoTest(id, startSec) {
 window.onYouTubeIframeAPIReady = initPreviewPlayer;
 if (window.YT?.Player) initPreviewPlayer();
 
-// Generar opciones con cronómetro visual en vivo
 document.getElementById('btn-ai-options').addEventListener('click', async () => {
   const title = inputTitle.value.trim();
-  if (!title) return notify('warning', 'Falta el título', 'Escribe el título o prueba el video de YouTube para traerlo solo.');
+  if (!title) return notify('warning', 'Falta el título', 'Prueba primero el video de YouTube o escribe el título.');
 
   const btnAi = document.getElementById('btn-ai-options');
   btnAi.disabled = true;
@@ -162,23 +160,50 @@ document.getElementById('btn-test-yt').addEventListener('click', () => {
   runVideoTest(id, parseInt(inputStart.value, 10) || 0);
 });
 
+function buildRowHTML(item) {
+  return `
+    <div class="cat-row">
+      <div class="cat-info">
+        <div class="cat-title" title="${item.title}">${item.title}</div>
+        <div class="cat-meta">ID: ${item.youtubeId} • Inicio: ${item.startSec}s • Coro: ${item.chorusSec}s</div>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button onclick="editItem('${item._id}')" class="btn" title="Editar" style="background:#00f0ff; color:#0d0221; padding:6px 10px; font-size:0.78rem;">✏️</button>
+        <button onclick="deleteItem('${item._id}')" class="btn" title="Eliminar" style="background:#ff2a5f; color:#fff; padding:6px 10px; font-size:0.78rem;">🗑️</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCatalogLists() {
+  const qMusic = searchMusic.value.toLowerCase().trim();
+  const qMovie = searchMovie.value.toLowerCase().trim();
+
+  const allMusic = catalogItems.filter(i => i.type === 'music');
+  const allMovies = catalogItems.filter(i => i.type === 'movie');
+
+  document.getElementById('music-count').textContent = allMusic.length;
+  document.getElementById('movie-count').textContent = allMovies.length;
+
+  const filteredMusic = allMusic.filter(i => i.title.toLowerCase().includes(qMusic));
+  const filteredMovies = allMovies.filter(i => i.title.toLowerCase().includes(qMovie));
+
+  document.getElementById('music-list').innerHTML = filteredMusic.length
+    ? filteredMusic.map(buildRowHTML).join('')
+    : '<p style="color:#9a8c98; font-size:0.85rem; text-align:center; padding:16px;">Sin canciones que coincidan.</p>';
+
+  document.getElementById('movie-list').innerHTML = filteredMovies.length
+    ? filteredMovies.map(buildRowHTML).join('')
+    : '<p style="color:#9a8c98; font-size:0.85rem; text-align:center; padding:16px;">Sin películas que coincidan.</p>';
+}
+
+searchMusic.addEventListener('input', renderCatalogLists);
+searchMovie.addEventListener('input', renderCatalogLists);
+
 async function loadCatalog() {
   const res = await fetch('/api/content');
   catalogItems = await res.json();
-  document.getElementById('catalog-count').textContent = catalogItems.length;
-  const list = document.getElementById('catalog-list');
-  list.innerHTML = catalogItems.map(item => `
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.06); border-radius:10px; gap:12px;">
-      <div>
-        <strong>${item.type === 'movie' ? '🎬' : '🎵'} ${item.title}</strong>
-        <div style="font-size:0.8rem; color:#e0d4fc;">ID: ${item.youtubeId} • Inicio: ${item.startSec}s • Coro: ${item.chorusSec}s</div>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button onclick="editItem('${item._id}')" class="btn" style="background:#00f0ff; color:#0d0221; padding:8px 12px; font-size:0.85rem;">✏️ Editar</button>
-        <button onclick="deleteItem('${item._id}')" class="btn" style="background:#ff2a5f; color:#fff; padding:8px 12px; font-size:0.85rem;">🗑️</button>
-      </div>
-    </div>
-  `).join('');
+  renderCatalogLists();
 }
 
 window.editItem = (id) => {
