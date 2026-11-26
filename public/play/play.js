@@ -38,6 +38,26 @@ function setBuzzerEnabled(enabled, label = '¡ME LA SÉ!', hint = 'Toca apenas r
   buzzerHint.textContent = hint;
 }
 
+function renderHostToggleButtons(state) {
+  document.querySelectorAll('#host-mode-group .host-toggle-btn').forEach(btn => {
+    const isSelected = btn.dataset.mode === state.mode;
+    btn.style.background = isSelected ? '#00f0ff' : 'rgba(255,255,255,0.08)';
+    btn.style.color = isSelected ? '#0d0221' : '#fff';
+    btn.style.border = isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.18)';
+    btn.style.opacity = isSelected ? '1' : '0.45';
+    btn.style.transform = isSelected ? 'scale(1.02)' : 'scale(1)';
+  });
+
+  document.querySelectorAll('#host-cat-group .host-toggle-btn').forEach(btn => {
+    const isSelected = btn.dataset.cat === state.category;
+    btn.style.background = isSelected ? '#ff007f' : 'rgba(255,255,255,0.08)';
+    btn.style.color = '#fff';
+    btn.style.border = isSelected ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.18)';
+    btn.style.opacity = isSelected ? '1' : '0.45';
+    btn.style.transform = isSelected ? 'scale(1.02)' : 'scale(1)';
+  });
+}
+
 // 1. Unirse con PIN + Nombre
 document.getElementById('btn-join').addEventListener('click', () => {
   const pin = inputPin.value.trim();
@@ -100,8 +120,7 @@ function syncUI(state) {
     const hostSetup = document.getElementById('host-setup-card');
     if (amIHost) {
       hostSetup.classList.remove('hidden');
-      document.getElementById('host-select-mode').value = state.mode;
-      document.getElementById('host-select-cat').value = state.category;
+      renderHostToggleButtons(state);
     } else {
       hostSetup.classList.add('hidden');
     }
@@ -121,13 +140,19 @@ window.voteForHost = (targetTeamId) => {
   socket.emit('lobby:vote_host', { targetTeamId });
 };
 
-// Cambios de configuración del Anfitrión en tiempo real
-document.getElementById('host-select-mode').addEventListener('change', (e) => {
-  socket.emit('host:update_config', { mode: e.target.value });
+// Cambios de configuración del Anfitrión con botones táctiles
+document.querySelectorAll('#host-mode-group .host-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    socket.emit('host:update_config', { mode: btn.dataset.mode });
+  });
 });
-document.getElementById('host-select-cat').addEventListener('change', (e) => {
-  socket.emit('host:update_config', { category: e.target.value });
+
+document.querySelectorAll('#host-cat-group .host-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    socket.emit('host:update_config', { category: btn.dataset.cat });
+  });
 });
+
 document.getElementById('btn-host-start-game').addEventListener('click', () => {
   socket.emit('host:next_round', {});
 });
@@ -136,12 +161,15 @@ document.getElementById('btn-host-start-game').addEventListener('click', () => {
 document.getElementById('btn-host-next-round').addEventListener('click', () => {
   socket.emit('host:next_round', {});
 });
+
 document.getElementById('btn-host-end-game').addEventListener('click', () => {
   socket.emit('host:end_game');
 });
+
 document.getElementById('btn-judge-ok').addEventListener('click', () => {
   socket.emit('host:judge', { isCorrect: true });
 });
+
 document.getElementById('btn-judge-fail').addEventListener('click', () => {
   socket.emit('host:judge', { isCorrect: false });
 });

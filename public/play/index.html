@@ -12,7 +12,6 @@
 <body>
 
   <!-- Pantalla 1: Ingreso con PIN + Nombre de Grupo -->
-  <!-- Pantalla 1: Ingreso con PIN + Nombre de Grupo -->
   <main id="screen-join" class="play-container" style="padding: 16px; box-sizing: border-box; overflow-x: hidden;">
     <div class="glass-card join-card" style="width: 100%; max-width: 400px; box-sizing: border-box; padding: 22px 18px;">
       <h1 class="brand-title" style="font-size: 1.75rem;">🎉 TRIVIA PARTY</h1>
@@ -53,26 +52,40 @@
       </div>
     </section>
 
-    <!-- Panel exclusivo del Anfitrión Elegido (invisible para los demás) -->
-    <section id="host-setup-card" class="glass-card hidden" style="width:100%; padding:18px; border:2px solid #ffd700;">
+    <!-- Panel exclusivo del Anfitrión Elegido (botones excluyentes, modificables antes de iniciar) -->
+    <section id="host-setup-card" class="glass-card hidden" style="width:100%; padding:18px; border:2px solid #ffd700; box-sizing:border-box;">
       <h2 style="font-size:1.05rem; color:#ffd700; margin-bottom:12px;">🎛️ Eres el Anfitrión — Configura la Partida</h2>
 
-      <label style="display:block; font-size:0.8rem; color:#e0d4fc; margin-bottom:4px;">Modalidad de juego:</label>
-      <select id="host-select-mode" style="width:100%; padding:10px; border-radius:10px; background:#140533; color:#fff; border:1px solid #00f0ff; margin-bottom:10px; font-weight:700;">
-        <option value="auto">🤖 Todos Juegan (4 opciones en celular)</option>
-        <option value="host">🎤 Con Presentador (Tú validas las respuestas)</option>
-      </select>
+      <label style="display:block; font-size:0.78rem; color:#00f0ff; font-weight:800; margin-bottom:6px;">MODALIDAD DE JUEGO:</label>
+      <div id="host-mode-group" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+        <button type="button" class="btn host-toggle-btn" data-mode="auto"
+          style="padding:11px 8px; font-size:0.82rem; border-radius:10px; line-height:1.25;">
+          🤖 Todos Juegan
+        </button>
+        <button type="button" class="btn host-toggle-btn" data-mode="host"
+          style="padding:11px 8px; font-size:0.82rem; border-radius:10px; line-height:1.25;">
+          🎤 Con Presentador
+        </button>
+      </div>
 
-      <label style="display:block; font-size:0.8rem; color:#e0d4fc; margin-bottom:4px;">Categoría:</label>
-      <select id="host-select-cat" style="width:100%; padding:10px; border-radius:10px; background:#140533; color:#fff; border:1px solid #00f0ff; margin-bottom:14px; font-weight:700;">
-        <option value="all">🎲 Mixto (Música + Cine)</option>
-        <option value="music">🎵 Solo Música</option>
-        <option value="movie">🎬 Solo Cine y Series</option>
-      </select>
+      <label style="display:block; font-size:0.78rem; color:#00f0ff; font-weight:800; margin-bottom:6px;">CATEGORÍA:</label>
+      <div id="host-cat-group" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:16px;">
+        <button type="button" class="btn host-toggle-btn" data-cat="all"
+          style="padding:10px 6px; font-size:0.8rem; border-radius:10px;">
+          🎲 Mixto
+        </button>
+        <button type="button" class="btn host-toggle-btn" data-cat="music"
+          style="padding:10px 6px; font-size:0.8rem; border-radius:10px;">
+          🎵 Música
+        </button>
+        <button type="button" class="btn host-toggle-btn" data-cat="movie"
+          style="padding:10px 6px; font-size:0.8rem; border-radius:10px;">
+          🎬 Cine/TV
+        </button>
+      </div>
 
-      <button id="btn-host-start-game" class="btn btn-primary" style="width:100%;">🚀 INICIAR PARTIDA</button>
+      <button id="btn-host-start-game" class="btn btn-primary" style="width:100%; box-sizing:border-box;">🚀 INICIAR PARTIDA</button>
     </section>
-  </main>
 
   <!-- Pantalla 3: Juego Activo -->
   <main id="screen-game" class="play-container hidden">
