@@ -12,16 +12,26 @@
 <body>
 
   <!-- Pantalla 1: Ingreso con PIN + Nombre de Grupo -->
-  <main id="screen-join" class="play-container">
-    <div class="glass-card join-card">
-      <h1 class="brand-title">🎉 TRIVIA PARTY</h1>
-      <p class="subtitle">Ingresa el PIN de la TV y el nombre de tu grupo</p>
+  <!-- Pantalla 1: Ingreso con PIN + Nombre de Grupo -->
+  <main id="screen-join" class="play-container" style="padding: 16px; box-sizing: border-box; overflow-x: hidden;">
+    <div class="glass-card join-card" style="width: 100%; max-width: 400px; box-sizing: border-box; padding: 22px 18px;">
+      <h1 class="brand-title" style="font-size: 1.75rem;">🎉 TRIVIA PARTY</h1>
+      <p class="subtitle" style="font-size: 0.9rem; margin-bottom: 14px;">Ingresa el código de la TV y el nombre de tu grupo</p>
 
-      <input type="tel" id="input-room-pin" maxlength="4" placeholder="PIN de sala (4 dígitos)" autocomplete="off"
-        style="text-align:center; letter-spacing:6px; font-size:1.3rem; font-weight:900; margin-bottom:10px;">
-      <input type="text" id="input-team-name" maxlength="18" placeholder="Ej: Los Invencibles" autocomplete="off">
-      <p id="join-error-msg" style="color:#ff4d6d; font-size:0.85rem; font-weight:700; min-height:20px; margin:6px 0;"></p>
-      <button id="btn-join" class="btn btn-primary">UNIRSE A LA SALA 🚀</button>
+      <label for="input-room-pin" style="display: block; text-align: left; font-size: 0.78rem; color: #00f0ff; font-weight: 800; margin-bottom: 4px;">
+        1. PIN DE SALA (4 DÍGITOS)
+      </label>
+      <input type="tel" id="input-room-pin" maxlength="4" inputmode="numeric" placeholder="Ej: 6683" autocomplete="off"
+        style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.45); color: #ffd700; border: 2px solid #00f0ff; text-align: center; letter-spacing: 4px; font-size: 1.25rem; font-weight: 900; margin-bottom: 12px;">
+
+      <label for="input-team-name" style="display: block; text-align: left; font-size: 0.78rem; color: #00f0ff; font-weight: 800; margin-bottom: 4px;">
+        2. NOMBRE DE TU GRUPO
+      </label>
+      <input type="text" id="input-team-name" maxlength="18" placeholder="Ej: Los Invencibles" autocomplete="off"
+        style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.45); color: #fff; border: 1px solid rgba(255,255,255,0.25); font-size: 1rem; margin-bottom: 6px;">
+
+      <p id="join-error-msg" style="color: #ff4d6d; font-size: 0.82rem; font-weight: 700; min-height: 18px; margin: 6px 0;"></p>
+      <button id="btn-join" class="btn btn-primary" style="width: 100%; box-sizing: border-box;">UNIRSE A LA SALA 🚀</button>
     </div>
     <div class="ad-slot ad-banner-bottom">Espacio Publicitario</div>
   </main>
