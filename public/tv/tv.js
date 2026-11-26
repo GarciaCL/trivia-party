@@ -2,172 +2,176 @@ import { initSetupWizard } from './setup-wizard.js';
 
 const socket = io();
 
-const teamsList = document.getElementById('teams-list');
-const buzzerBanner = document.getElementById('buzzer-banner');
-const alertTeamName = document.getElementById('alert-team-name');
-const alertSubtitle = document.getElementById('alert-subtitle');
-const welcomeLobby = document.getElementById('welcome-lobby');
-const musicVisualizer = document.getElementById('music-visualizer');
-const mediaStatusText = document.getElementById('media-status-text');
-const btnNextRound = document.getElementById('btn-next-round');
-const btnToggleMode = document.getElementById('btn-toggle-mode');
-const badgeType = document.getElementById('badge-type');
-const hostControls = document.getElementById('host-controls');
-const podiumScreen = document.getElementById('podium-screen');
-const podiumContainer = document.getElementById('podium-container');
+let ytPlayer = null;
+let playerReady = false;
+let pendingItem = null;
+let lastGeneratedPin = null;
 
-let player = null, playerReady = false, pendingItem = null;
-let currentItem = null, gameStarted = false, currentMode = 'auto', selectedCat = 'all', allTeams = [];
+const MODE_LABELS = { auto: 'MODO: AUTO [M]', host: 'MODO: PRESENTADOR [M]' };
+const CAT_LABELS = { all: 'MIXTO', music: 'SÓLO MÚSICA', movie: 'SÓLO CINE' };
 
-function createYTPlayer() {
-  if (player || !window.YT?.Player) return;
-  player = new window.YT.Player('youtube-player', {
-    height: '100%', width: '100%',
-    playerVars: { autoplay: 1, controls: 0, disablekb: 1, rel: 0, playsinline: 1, origin: window.location.origin },
+function initYT() {
+  if (ytPlayer || !window.YT?.Player) return;
+  ytPlayer = new window.YT.Player('youtube-player', {
+    height: '100%',
+    width: '100%',
+    playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, origin: window.location.origin },
     events: {
       onReady: () => {
         playerReady = true;
-        if (pendingItem) { playMediaItem(pendingItem); pendingItem = null; }
+        if (pendingItem) {
+          loadStageMedia(pendingItem);
+          pendingItem = null;
+        }
       },
-      onError: () => {
-        if (gameStarted) socket.emit('host:next_round', { category: selectedCat });
-      }
+      onError: () => socket.emit('host:next_round', {})
     }
   });
 }
 
-window.onYouTubeIframeAPIReady = createYTPlayer;
-if (window.YT?.Player) createYTPlayer();
+window.onYouTubeIframeAPIReady = initYT;
+if (window.YT?.Player) initYT();
 
-function playMediaItem(item) {
-  currentItem = item;
-  buzzerBanner.classList.add('hidden');
-  hostControls.classList.add('hidden');
-  musicVisualizer.classList.toggle('hidden', item.type !== 'music');
-  if (item.type === 'music') mediaStatusText.textContent = '¡ESCUCHA CON ATENCIÓN!';
-
-  if (playerReady && player?.loadVideoById) {
-    player.unMute();
-    player.setVolume(100);
-    player.loadVideoById({ videoId: item.youtubeId, startSeconds: item.startSec });
-    player.playVideo();
-  } else {
+function loadStageMedia(item) {
+  if (!playerReady || !ytPlayer?.loadVideoById) {
     pendingItem = item;
+    initYT();
+    return;
+  }
+  const mask = document.getElementById('player-mask');
+  const visualizer = document.getElementById('music-visualizer');
+
+  if (item.type === 'movie') {
+    mask.classList.remove('hidden');
+    visualizer.classList.add('hidden');
+  } else {
+    mask.classList.add('hidden');
+    visualizer.classList.remove('hidden');
+  }
+
+  ytPlayer.unMute();
+  ytPlayer.setVolume(100);
+  ytPlayer.loadVideoById({ videoId: item.youtubeId, startSeconds: item.startSec || 0 });
+  ytPlayer.playVideo();
+}
+
+function renderQRCode(pin) {
+  if (!pin || pin === lastGeneratedPin) return;
+  lastGeneratedPin = pin;
+  document.getElementById('pin-display').textContent = pin;
+  const qrContainer = document.getElementById('qr-code');
+  qrContainer.innerHTML = '';
+  const joinUrl = `${window.location.origin}/play?pin=${pin}`;
+  if (window.QRCode) {
+    new window.QRCode(qrContainer, {
+      text: joinUrl,
+      width: 200,
+      height: 200,
+      colorDark: '#0d0221',
+      colorLight: '#ffffff'
+    });
   }
 }
 
-initSetupWizard({
-  onReadyToStart: ({ mode, category }) => {
-    currentMode = mode;
-    selectedCat = category;
-    btnToggleMode.textContent = mode === 'host' ? 'MODO: PRESENTADOR [M]' : 'MODO: AUTO [M]';
-    const catNames = { all: 'MIXTO', music: 'SÓLO MÚSICA', movie: 'SÓLO CINE' };
-    if (badgeType) badgeType.textContent = `CATEGORÍA: ${catNames[category] || 'MIXTO'}`;
+socket.on('state:sync', (state) => {
+  renderQRCode(state.roomPin);
 
-    socket.emit('host:toggle_mode', { mode: currentMode });
-    gameStarted = true;
-    welcomeLobby.classList.add('hidden');
-    podiumScreen?.classList.add('hidden');
+  document.getElementById('btn-toggle-mode').textContent = MODE_LABELS[state.mode] || 'MODO: AUTO [M]';
+  document.getElementById('badge-type').textContent = CAT_LABELS[state.category] || 'MIXTO';
 
-    if (playerReady && player?.unMute) { player.unMute(); player.setVolume(100); }
-    socket.emit('host:next_round', { category: selectedCat });
-  }
+  const hostTeam = state.teams.find(t => t.id === state.hostTeamId);
+  const hostLabel = hostTeam ? ` • 👑 Anfitrión: ${hostTeam.name}` : '';
+  document.getElementById('lobby-teams-counter').textContent = `Equipos listos: ${state.teams.length}${hostLabel}`;
+
+  const teamsList = document.getElementById('teams-list');
+  teamsList.innerHTML = state.teams.length
+    ? state.teams.map((t, idx) => {
+        const isHost = t.id === state.hostTeamId;
+        const votes = state.hostVotesTally?.[t.id] || 0;
+        const voteTag = state.phase === 'lobby' ? ` <small style="color:#00f0ff;">(${votes}v)</small>` : '';
+        return `
+          <li>
+            <span>#${idx + 1} ${isHost ? '👑 ' : ''}${t.name}${voteTag}</span>
+            <strong style="color:var(--neon-yellow);">${t.score} pts</strong>
+          </li>
+        `;
+      }).join('')
+    : '<li class="empty-notice">Esperando equipos...</li>';
 });
 
-function toggleMode() {
-  currentMode = currentMode === 'auto' ? 'host' : 'auto';
-  btnToggleMode.textContent = currentMode === 'host' ? 'MODO: PRESENTADOR [M]' : 'MODO: AUTO [M]';
-  socket.emit('host:toggle_mode', { mode: currentMode });
-}
-btnToggleMode.addEventListener('click', toggleMode);
-
-const judge = (action, bonus = 0) => {
-  socket.emit('host:judge', { action, bonus });
-  hostControls.classList.add('hidden');
-};
-document.getElementById('btn-judge-correct')?.addEventListener('click', () => judge('correct'));
-document.getElementById('btn-judge-wrong')?.addEventListener('click', () => judge('wrong'));
-document.getElementById('btn-judge-bonus')?.addEventListener('click', () => judge('correct', 5));
-btnNextRound.addEventListener('click', () => {
-  if (gameStarted) socket.emit('host:next_round', { category: selectedCat });
+document.getElementById('btn-start-party')?.addEventListener('click', () => {
+  socket.emit('host:next_round', {});
 });
-
-function showPodium(winnerName = null) {
-  if (!podiumScreen) return;
-  player?.pauseVideo?.();
-  podiumScreen.classList.remove('hidden');
-  const titleEl = document.getElementById('podium-title');
-  if (titleEl) titleEl.textContent = winnerName ? `👑 ¡${winnerName.toUpperCase()} LLEGÓ A 100 PTS! 👑` : '👑 ¡GRAN FINAL! 👑';
-  const sorted = [...allTeams].sort((a, b) => b.score - a.score).slice(0, 3);
-  const colors = ['#ffd700', '#c0c0c0', '#cd7f32'], heights = ['220px', '170px', '130px'];
-  podiumContainer.innerHTML = sorted.map((t, i) => `
-    <div style="flex:1; max-width:180px; height:${heights[i]}; background:${colors[i]}; color:#0d0221; border-radius:12px 12px 0 0; display:flex; flex-direction:column; justify-content:center; align-items:center; font-weight:800;">
-      <span style="font-size:1.8rem;">#${i + 1}</span><span>${t.name}</span><span>${t.score} pts</span>
-    </div>`).join('');
-  if (window.confetti) window.confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-}
-document.getElementById('btn-finish-game')?.addEventListener('click', () => showPodium());
-document.getElementById('btn-restart-game')?.addEventListener('click', () => {
-  podiumScreen.classList.add('hidden');
-  socket.emit('host:next_round', { category: selectedCat });
+document.getElementById('btn-next-round')?.addEventListener('click', () => {
+  socket.emit('host:next_round', {});
 });
-
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' && gameStarted) {
-    e.preventDefault();
-    socket.emit('host:next_round', { category: selectedCat });
-  } else if (e.key === 'm' || e.key === 'M') toggleMode();
-  else if (e.key === 'f' || e.key === 'F') showPodium();
-  else if (!hostControls.classList.contains('hidden')) {
-    if (e.key === '1') judge('correct');
-    else if (e.key === '2') judge('wrong');
-    else if (e.key === '3') judge('correct', 5);
-  }
+document.getElementById('btn-judge-correct')?.addEventListener('click', () => {
+  socket.emit('host:judge', { isCorrect: true });
+});
+document.getElementById('btn-judge-wrong')?.addEventListener('click', () => {
+  socket.emit('host:judge', { isCorrect: false });
+});
+document.getElementById('btn-judge-bonus')?.addEventListener('click', () => {
+  socket.emit('host:judge', { isCorrect: true, bonus: true });
 });
 
 socket.on('round:new', ({ item }) => {
-  if (gameStarted) playMediaItem(item);
+  document.getElementById('welcome-lobby').classList.add('hidden');
+  document.getElementById('buzzer-banner').classList.add('hidden');
+  document.getElementById('host-controls').classList.add('hidden');
+  document.getElementById('media-status-text').textContent = '¡ESCUCHA CON ATENCIÓN!';
+  loadStageMedia(item);
 });
 
-socket.on('buzzer:locked', ({ teamName }) => {
-  player?.pauseVideo?.();
-  alertTeamName.textContent = teamName;
-  buzzerBanner.classList.remove('hidden');
-  alertSubtitle.textContent = currentMode === 'host'
-    ? '🎤 Responde oralmente: [1] Correcto | [2] Fallo | [3] Bonus'
+socket.on('round:buzzed', ({ team, mode }) => {
+  ytPlayer?.pauseVideo?.();
+  document.getElementById('alert-team-name').textContent = team.name;
+  document.getElementById('alert-subtitle').textContent = mode === 'host'
+    ? 'Respondiendo en voz alta...'
     : 'Respondiendo en su celular (5s)...';
-  if (currentMode === 'host') hostControls.classList.remove('hidden');
+  document.getElementById('buzzer-banner').classList.remove('hidden');
+  if (mode === 'host') {
+    document.getElementById('host-controls').classList.remove('hidden');
+  }
 });
 
-socket.on('round:success', ({ team, chorusSec }) => {
-  alertSubtitle.textContent = `¡CORRECTO! +10 pts para ${team.name} 🎉`;
-  hostControls.classList.add('hidden');
-  setTimeout(() => {
-    buzzerBanner.classList.add('hidden');
-    if (currentItem?.type === 'music') mediaStatusText.textContent = `¡FESTEJO! 🎶 ${currentItem.title}`;
-    player?.seekTo?.(chorusSec, true);
-    player?.playVideo?.();
-  }, 1200);
+socket.on('round:steal', () => {
+  document.getElementById('buzzer-banner').classList.add('hidden');
+  document.getElementById('host-controls').classList.add('hidden');
+  ytPlayer?.playVideo?.();
 });
 
-socket.on('round:fail', ({ team }) => {
-  alertSubtitle.textContent = `¡FALLÓ! -10 pts para ${team.name} ❌ ¡ROBO DISPONIBLE!`;
-  hostControls.classList.add('hidden');
-  setTimeout(() => { buzzerBanner.classList.add('hidden'); player?.playVideo?.(); }, 1200);
+socket.on('round:result', ({ correct, team, item }) => {
+  document.getElementById('buzzer-banner').classList.add('hidden');
+  document.getElementById('host-controls').classList.add('hidden');
+
+  const statusEl = document.getElementById('media-status-text');
+  if (item.type === 'movie') {
+    document.getElementById('player-mask').classList.remove('hidden');
+    document.getElementById('music-visualizer').classList.add('hidden');
+  } else {
+    document.getElementById('player-mask').classList.add('hidden');
+    document.getElementById('music-visualizer').classList.remove('hidden');
+    statusEl.innerHTML = correct
+      ? `¡FESTEJO! 🎶 ${item.title}`
+      : `😢 Era: 🎶 ${item.title}`;
+  }
+
+  if (ytPlayer?.seekTo) {
+    ytPlayer.seekTo(item.chorusSec || 30, true);
+    ytPlayer.playVideo();
+  }
 });
 
-socket.on('teams:updated', (teams) => {
-  allTeams = teams;
-  const counterEl = document.getElementById('lobby-teams-counter');
-  if (counterEl) counterEl.textContent = `Equipos listos: ${teams.length}`;
-  teamsList.innerHTML = teams.length === 0 ? '<li class="empty-notice">Esperando equipos...</li>' : '';
-  const sorted = [...teams].sort((a, b) => b.score - a.score);
-  sorted.forEach((t, i) => {
-    const li = document.createElement('li');
-    li.className = 'team-item';
-    li.innerHTML = `<span>#${i + 1} ${t.name}</span><span class="score">${t.score} pts</span>`;
-    teamsList.appendChild(li);
-  });
-  const winner = sorted.find(t => t.score >= 100);
-  if (winner && podiumScreen?.classList.contains('hidden') && gameStarted) showPodium(winner.name);
+socket.on('game:podium', ({ ranking }) => {
+  ytPlayer?.stopVideo?.();
+  const top = ranking.slice(0, 3).map((t, i) => `#${i + 1} ${t.name} (${t.score} pts)`).join('<br>');
+  window.Swal?.fire({
+    title: '🏆 ¡PODIO FINAL! 🏆',
+    html: top || 'Sin equipos',
+    background: '#140533',
+    color: '#fff',
+    confirmButtonText: 'Nueva Sala',
+    confirmButtonColor: '#ff007f'
+  }).then(() => window.location.reload());
 });

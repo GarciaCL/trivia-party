@@ -12,15 +12,54 @@
 </head>
 <body>
 
-  <!-- Vista 1: Ingreso de Equipo -->
+  <!-- Vista 1: Ingreso de Equipo (con PIN de sala) -->
   <section id="login-view" class="play-view glass-card">
     <h1 class="play-title">TRIVIA PARTY</h1>
-    <p class="play-subtitle">Ingresa el nombre de tu equipo para jugar:</p>
+    <p class="play-subtitle">Ingresa el PIN de la TV y el nombre de tu equipo:</p>
     <form id="form-join">
+      <input type="tel" id="input-room-pin" placeholder="PIN de sala (4 dígitos)" maxlength="4" inputmode="numeric" required autocomplete="off" style="margin-bottom: 12px; letter-spacing: 3px; font-weight: 900; color: var(--neon-yellow);">
       <input type="text" id="input-team-name" placeholder="Nombre de tu equipo" maxlength="20" required autocomplete="off">
+      <p id="join-error-msg" style="color: #ff4d6d; font-size: 0.85rem; font-weight: 700; min-height: 18px; margin: 6px 0;"></p>
       <button type="submit" class="btn btn-join">¡ENTRAR AL JUEGO! 🚀</button>
     </form>
     <div class="ad-slot" style="margin-top: 24px; width: 100%;">Publicidad / AdWords</div>
+  </section>
+
+  <!-- Vista 1.5: Votación de Anfitrión y Configuración Remota (Solo en Lobby) -->
+  <section id="lobby-vote-view" class="play-view hidden">
+    <header class="team-bar glass-card">
+      <span id="lobby-team-display">Equipo</span>
+      <span id="lobby-pin-display" class="team-score">PIN: ----</span>
+    </header>
+
+    <div class="glass-card" style="padding: 18px; width: 100%; margin: 12px 0; text-align: left;">
+      <h3 style="color: var(--neon-cyan); font-size: 1rem; margin-bottom: 6px;">👑 Vota quién controla el juego</h3>
+      <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 12px;">El grupo con mayoría tendrá el botón de Siguiente Ronda:</p>
+      <div id="host-vote-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <p id="host-chosen-text" style="margin-top: 12px; text-align: center; color: var(--neon-yellow); font-weight: 800; font-size: 0.88rem;"></p>
+    </div>
+
+    <!-- Panel de configuración visible SOLO para el Anfitrión elegido -->
+    <div id="host-config-panel" class="glass-card hidden" style="padding: 18px; width: 100%; border: 2px solid var(--neon-yellow); text-align: left;">
+      <h3 style="color: var(--neon-yellow); font-size: 0.98rem; margin-bottom: 10px;">🎛️ Eres el Anfitrión — Configura la Partida</h3>
+
+      <p style="font-size: 0.78rem; color: var(--neon-cyan); font-weight: 800; margin-bottom: 6px;">MODALIDAD:</p>
+      <div id="host-mode-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+        <button type="button" class="btn host-opt-btn" data-mode="auto" style="padding: 10px 6px; font-size: 0.8rem;">🤖 Todos Juegan</button>
+        <button type="button" class="btn host-opt-btn" data-mode="host" style="padding: 10px 6px; font-size: 0.8rem;">🎤 Con Presentador</button>
+      </div>
+
+      <p style="font-size: 0.78rem; color: var(--neon-cyan); font-weight: 800; margin-bottom: 6px;">CATEGORÍA:</p>
+      <div id="host-cat-btns" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;">
+        <button type="button" class="btn host-opt-btn" data-cat="all" style="padding: 10px 4px; font-size: 0.78rem;">🎲 Mixto</button>
+        <button type="button" class="btn host-opt-btn" data-cat="music" style="padding: 10px 4px; font-size: 0.78rem;">🎵 Música</button>
+        <button type="button" class="btn host-opt-btn" data-cat="movie" style="padding: 10px 4px; font-size: 0.78rem;">🎬 Cine</button>
+      </div>
+
+      <button type="button" id="btn-host-start" class="btn btn-join" style="width: 100%;">🚀 ¡INICIAR JUEGO!</button>
+    </div>
+
+    <div class="ad-slot" style="margin-top: auto; width: 100%;">Publicidad / AdWords</div>
   </section>
 
   <!-- Vista 2 y 3: Juego Activo -->
@@ -30,24 +69,36 @@
       <span id="player-score-display" class="team-score">0 pts</span>
     </header>
 
-    <!-- Buzzer 3D -->
+    <!-- Barra de control compacta visible SOLO en el celular del Anfitrión -->
+    <div id="host-live-bar" class="glass-card hidden" style="width: 100%; padding: 10px; margin-top: 10px; border: 1px solid var(--neon-yellow);">
+      <div id="host-judge-controls" class="hidden" style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button type="button" id="btn-mobile-ok" class="btn" style="flex: 1; background: #00ff88; color: #0d0221; padding: 10px; font-size: 0.85rem;">✅ CORRECTO</button>
+        <button type="button" id="btn-mobile-wrong" class="btn" style="flex: 1; background: #ff2a5f; color: #fff; padding: 10px; font-size: 0.85rem;">❌ INCORRECTO</button>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="btn-mobile-next" class="btn" style="flex: 2; background: var(--neon-cyan); color: #0d0221; padding: 10px; font-size: 0.85rem;">⏭️ SIGUIENTE RONDA</button>
+        <button type="button" id="btn-mobile-end" class="btn" style="flex: 1; background: rgba(255,255,255,0.15); color: #fff; padding: 10px; font-size: 0.8rem;">🏆 FIN</button>
+      </div>
+    </div>
+
+    <!-- Buzzer 3D (Inicia bloqueado hasta que empiece la ronda) -->
     <div id="buzzer-box" class="buzzer-container">
-      <button id="btn-buzzer" class="buzzer-btn">
-        <span class="buzzer-text">¡ME LA SÉ!</span>
+      <button id="btn-buzzer" class="buzzer-btn" disabled style="opacity: 0.4; pointer-events: none;">
+        <span class="buzzer-text">ESPERA...</span>
       </button>
-      <p id="buzzer-hint" class="buzzer-hint">¡Pulsa rápido cuando reconozcas el tema!</p>
+      <p id="buzzer-hint" class="buzzer-hint">Esperando que inicie la ronda...</p>
     </div>
 
     <!-- Modo Presentador: Hablar en voz alta -->
     <div id="host-mode-banner" class="glass-card hidden" style="padding: 24px; width: 100%; margin: auto 0;">
       <p style="font-size: 3rem; margin-bottom: 10px;">🎤</p>
-      <h2 style="color: var(--neon-cyan); margin-bottom: 8px;">¡HABLA EN VOZ ALTA!</h2>
-      <p style="color: var(--text-muted);">El presentador está calificando tu respuesta.</p>
+      <h2 id="host-banner-title" style="color: var(--neon-cyan); margin-bottom: 8px;">¡HABLA EN VOZ ALTA!</h2>
+      <p id="host-banner-sub" style="color: var(--text-muted);">El presentador está calificando tu respuesta.</p>
     </div>
 
     <!-- Bloqueo de Turno / Robo -->
     <div id="locked-banner" class="glass-card hidden" style="padding: 24px; width: 100%; margin: auto 0;">
-      <p style="font-size: 3rem; margin-bottom: 10px;">🔒</p>
+      <p id="locked-icon" style="font-size: 3rem; margin-bottom: 10px;">🔒</p>
       <h2 id="locked-msg" style="color: var(--neon-yellow); margin-bottom: 8px;">¡Turno Bloqueado!</h2>
       <p id="locked-team-name" style="color: var(--text-muted);">Otro equipo está respondiendo...</p>
     </div>
