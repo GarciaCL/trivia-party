@@ -158,11 +158,22 @@ socket.on('round:new', ({ mode, hostTeamId }) => {
 });
 
 socket.on('round:options', ({ options }) => {
-  const colorClasses = ['opt-orange', 'opt-cyan', 'opt-yellow', 'opt-pink'];
+  const palette = [
+    { cls: 'opt-0', bg: '#ff7b00', color: '#0d0221' },
+    { cls: 'opt-1', bg: '#00f0ff', color: '#0d0221' },
+    { cls: 'opt-2', bg: '#ffd700', color: '#0d0221' },
+    { cls: 'opt-3', bg: '#ff2a85', color: '#ffffff' }
+  ];
   const grid = document.getElementById('options-grid');
-  grid.innerHTML = options.map((text, idx) => `
-    <button type="button" class="option-btn ${colorClasses[idx]}" data-index="${idx}">${text}</button>
-  `).join('');
+  grid.innerHTML = options.map((text, idx) => {
+    const style = palette[idx] || palette[0];
+    return `
+      <button type="button" class="option-btn ${style.cls}" data-index="${idx}"
+        style="background:${style.bg}; color:${style.color}; font-weight:800; border-radius:16px; min-height:115px; padding:14px; font-size:0.95rem; line-height:1.25;">
+        ${text}
+      </button>
+    `;
+  }).join('');
 
   grid.querySelectorAll('.option-btn').forEach(btn => {
     btn.addEventListener('click', () => {

@@ -83,6 +83,13 @@ socket.on('state:sync', (state) => {
   const hostLabel = hostTeam ? ` • 👑 Anfitrión: ${hostTeam.name}` : '';
   document.getElementById('lobby-teams-counter').textContent = `Equipos listos: ${state.teams.length}${hostLabel}`;
 
+  const hostStatusEl = document.getElementById('lobby-host-status');
+  if (hostStatusEl) {
+    hostStatusEl.textContent = hostTeam
+      ? `👑 Anfitrión: ${hostTeam.name} (configurando en su celular...)`
+      : 'Voten al anfitrión en su celular para configurar e iniciar';
+  }
+
   const teamsList = document.getElementById('teams-list');
   teamsList.innerHTML = state.teams.length
     ? state.teams.map((t, idx) => {
@@ -99,9 +106,6 @@ socket.on('state:sync', (state) => {
     : '<li class="empty-notice">Esperando equipos...</li>';
 });
 
-document.getElementById('btn-start-party')?.addEventListener('click', () => {
-  socket.emit('host:next_round', {});
-});
 document.getElementById('btn-next-round')?.addEventListener('click', () => {
   socket.emit('host:next_round', {});
 });

@@ -17,6 +17,9 @@ export const GameState = {
       name: name.trim().slice(0, 20),
       score: 0
     };
+    if (!this.hostTeamId || !this.teams[this.hostTeamId]) {
+      this.hostTeamId = socketId;
+    }
     return this.teams[socketId];
   },
 
