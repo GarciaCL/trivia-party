@@ -3,200 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trivia Party - Pantalla TV</title>
+  <title>Trivia Party - Pantalla Central</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="stylesheet" href="/tv/tv.css">
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <style>
-    .audio-hidden { display: none !important; }
-
-    /* Escenario TV con panel lateral derecho de equipos */
-    .tv-game-grid {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 24px;
-      padding: 24px 32px;
-      box-sizing: border-box;
-    }
-    .tv-main-stage {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .tv-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 20px;
-      height: fit-content;
-      max-height: calc(100vh - 48px);
-      overflow-y: auto;
-    }
-    .sidebar-team-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      transition: all 0.25s ease;
-    }
-    .sidebar-team-card.active-buzz {
-      border: 2px solid #ffd700;
-      background: rgba(255, 215, 0, 0.2);
-      transform: scale(1.03);
-    }
-
-    /* Ecualizador neón animado mientras suena la canción */
-    .eq-bars {
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      gap: 10px;
-      height: 90px;
-      margin-bottom: 24px;
-    }
-    .eq-bars span {
-      width: 14px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #00f0ff, #ff007f);
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.65);
-      animation: eqBounce 0.9s ease-in-out infinite alternate;
-    }
-    .eq-bars span:nth-child(1) { height: 35px; animation-delay: 0.0s; }
-    .eq-bars span:nth-child(2) { height: 75px; animation-delay: 0.2s; }
-    .eq-bars span:nth-child(3) { height: 55px; animation-delay: 0.4s; }
-    .eq-bars span:nth-child(4) { height: 85px; animation-delay: 0.15s; }
-    .eq-bars span:nth-child(5) { height: 45px; animation-delay: 0.35s; }
-    .eq-bars span:nth-child(6) { height: 70px; animation-delay: 0.5s; }
-    .eq-bars span:nth-child(7) { height: 40px; animation-delay: 0.25s; }
-
-    @keyframes eqBounce {
-      0% { transform: scaleY(0.35); opacity: 0.75; }
-      100% { transform: scaleY(1.1); opacity: 1; }
-    }
-    .eq-paused span {
-      animation-play-state: paused !important;
-      opacity: 0.35;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
-  <!-- Pantalla 1: Lobby con PIN, QR, Votación de Anfitrión y Config en Vivo -->
-  <main id="tv-lobby" class="tv-container">
-    <header style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:1200px; margin-bottom:20px; gap:20px; flex-wrap:wrap;">
-      <h1 class="tv-logo" style="font-size:2.4rem;">🎉 TRIVIA PARTY</h1>
-      <div class="glass-card" style="padding:10px 22px; display:flex; align-items:center; gap:14px;">
-        <span style="font-size:0.95rem; color:#e0d4fc;">PIN DE SALA:</span>
-        <strong id="tv-room-pin" style="font-size:2.2rem; color:#ffd700; letter-spacing:6px;">----</strong>
+  <!-- Barra Superior -->
+  <header class="tv-header glass-card">
+    <div class="room-badge">SALA PIN: <span id="pin-display">1234</span></div>
+    <div class="game-info">
+      <button id="btn-toggle-mode" class="badge btn-mode">MODO: AUTO [M]</button>
+      <span id="badge-type" class="badge">MÚSICA</span>
+    </div>
+    <button id="btn-next-round" class="btn btn-next">SIGUIENTE RONDA [Espacio] ⏭️</button>
+  </header>
+
+  <main class="tv-layout">
+    <!-- Escenario Multimedia -->
+    <section class="media-stage glass-card glow-cyan">
+      <div id="player-mask" class="video-mask">
+        <div id="youtube-player"></div>
       </div>
-    </header>
 
-    <div style="display:grid; grid-template-columns: 340px 1fr; gap:28px; width:100%; max-width:1200px; align-items:stretch;">
-      <section class="glass-card" style="padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-        <p style="font-weight:800; color:#00f0ff; margin-bottom:12px;">1. ESCANEA PARA ENTRAR</p>
-        <div style="background:#fff; padding:14px; border-radius:16px; margin-bottom:14px; min-width:238px; min-height:238px; display:flex; align-items:center; justify-content:center;">
-          <img id="tv-qr-img" src="" alt="Código QR Sala" style="width:210px; height:210px; display:block;">
+      <!-- Pantalla Visual Modo Música -->
+      <div id="music-visualizer" class="music-screen hidden">
+        <div class="sound-wave">
+          <span></span><span></span><span></span><span></span><span></span>
         </div>
-        <p style="font-size:0.85rem; color:#e0d4fc; line-height:1.5;">
-          O entra a:<br>
-          <strong id="tv-join-url" style="color:#fff; font-size:0.95rem;"></strong>
-        </p>
-      </section>
+        <h2 id="media-status-text" class="stage-text">¡ESCUCHA CON ATENCIÓN!</h2>
+      </div>
 
-      <section class="glass-card" style="padding:26px; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px;">
-            <h2 style="color:#ffd700; font-size:1.25rem; margin:0;">2. GRUPOS CONECTADOS Y VOTO DE ANFITRIÓN</h2>
-            <span id="tv-teams-count" class="score-badge" style="white-space:nowrap;">0 equipos</span>
-          </div>
-          <div id="tv-lobby-teams" style="display:flex; flex-wrap:wrap; gap:12px; min-height:90px; margin-bottom:20px;">
-            <p style="color:#9a8c98;">Esperando que los jugadores escaneen el código QR...</p>
-          </div>
+      <!-- Lobby con QR Gigante -->
+      <div id="welcome-lobby" class="lobby-screen">
+        <h1 class="lobby-title">¡ÚNETE A LA TRIVIA!</h1>
+        <p class="lobby-sub">Escanea con la cámara de tu celular</p>
+        <div class="qr-giant-wrapper">
+          <div id="qr-code"></div>
         </div>
+        <p id="lobby-teams-counter" class="lobby-counter">Equipos listos: 0</p>
+        <button id="btn-start-party" class="btn btn-start-game">🎉 ¡YA ESTAMOS TODOS! [Espacio] 🎉</button>
+      </div>
 
-        <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(0,240,255,0.25); border-radius:14px; padding:16px; display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; text-align:center;">
-          <div>
-            <div style="font-size:0.78rem; color:#c7b8ea;">👑 ANFITRIÓN</div>
-            <div id="tv-host-badge" style="font-weight:900; color:#ffd700; font-size:1.05rem; margin-top:4px;">Por votar</div>
-          </div>
-          <div>
-            <div style="font-size:0.78rem; color:#c7b8ea;">🎮 MODALIDAD</div>
-            <div id="tv-mode-badge" style="font-weight:900; color:#00f0ff; font-size:1.05rem; margin-top:4px;">Todos Juegan</div>
-          </div>
-          <div>
-            <div style="font-size:0.78rem; color:#c7b8ea;">🎯 CATEGORÍA</div>
-            <div id="tv-cat-badge" style="font-weight:900; color:#ff4d94; font-size:1.05rem; margin-top:4px;">Mixto</div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+      <!-- Alerta de Buzzer -->
+      <div id="buzzer-banner" class="buzzer-alert hidden">
+        <p class="alert-title">¡BUZZER PULSADO!</p>
+        <h1 id="alert-team-name" class="alert-team">Equipo Alfa</h1>
+        <p id="alert-subtitle" class="alert-sub">Respondiendo en su celular (5s)...</p>
+      </div>
 
-  <!-- Pantalla 2: Juego Activo (Escenario Central + Barra Lateral Derecha de Equipos) -->
-  <main id="tv-stage" class="tv-game-grid hidden">
-    <!-- Columna Izquierda: Escenario Principal -->
-    <div class="tv-main-stage">
-      <header style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-        <div id="tv-round-label" style="background:#ff007f; padding:10px 24px; border-radius:999px; font-weight:900; font-size:1.2rem; box-shadow:0 0 20px rgba(255,0,127,0.4);">RONDA 1</div>
-        <div id="tv-category-pill" style="color:#00f0ff; font-weight:800; font-size:1rem;">🎵 MODO AUDIO</div>
-      </header>
+      <!-- Controles de Árbitro / Host con Atajos -->
+      <div id="host-controls" class="host-panel hidden">
+        <button id="btn-judge-correct" class="btn btn-correct">[1] Luz Verde (+10)</button>
+        <button id="btn-judge-wrong" class="btn btn-wrong">[2] Luz Roja (-10)</button>
+        <button id="btn-judge-bonus" class="btn btn-bonus">[3] Bonus (+5)</button>
+      </div>
+    </section>
 
-      <section style="flex:1; width:100%; max-width:780px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:24px;">
-        <!-- Reproductor YouTube (Visible SOLO cuando es película/serie) -->
-        <div id="yt-wrapper" class="audio-hidden" style="width:100%; aspect-ratio:16/9; border-radius:20px; overflow:hidden; box-shadow:0 0 40px rgba(0,240,255,0.3); background:#000;">
-          <div id="yt-player"></div>
-        </div>
-
-        <!-- Ecualizador Animado cuando es Canción -->
-        <div id="audio-visualizer" class="glass-card" style="padding:52px 36px; width:100%;">
-          <div id="eq-bars" class="eq-bars">
-            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
-          <h2 id="stage-prompt-text" style="font-size:2.1rem; color:#00f0ff;">🎵 ¡ESCUCHA Y PRESIONA TU TIMBRE!</h2>
-        </div>
-
-        <!-- Banner de Equipo que tocó el Timbre -->
-        <div id="buzzed-banner" class="glass-card hidden" style="padding:26px 44px; border:3px solid #ffd700; background:rgba(20,5,51,0.95); width:100%;">
-          <span style="color:#00f0ff; font-weight:900; letter-spacing:2px;">⚡ ¡TIMBRE ACTIVADO!</span>
-          <h2 id="buzzed-team-name" style="font-size:2.6rem; color:#ffd700; margin-top:8px;">Nombre Equipo</h2>
-        </div>
-
-        <!-- Revelación de Respuesta (Sin mostrar video en canciones) -->
-        <div id="reveal-card" class="glass-card hidden" style="padding:28px 36px; width:100%; border:2px solid #00ff88;">
-          <h3 id="reveal-status-text" style="color:#00ff88; font-size:1.35rem;">¡CORRECTO!</h3>
-          <h2 id="reveal-song-title" style="font-size:2rem; color:#fff; margin-top:8px;">Título del Tema</h2>
-          <p style="font-size:0.95rem; color:#00f0ff; margin-top:12px;">Esperando que el anfitrión pulse Siguiente Ronda en su celular...</p>
-        </div>
-      </section>
-
-      <div style="height:8px;"></div>
-    </div>
-
-    <!-- Columna Derecha: Tabla de Posiciones en Vivo -->
-    <aside class="glass-card tv-sidebar">
-      <h3 style="color:#ffd700; font-size:1.1rem; text-align:center; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:10px; margin:0;">
-        🏆 EQUIPOS Y PUNTAJE
-      </h3>
-      <div id="tv-scoreboard" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <!-- Marcador Lateral -->
+    <aside class="leaderboard glass-card glow-pink">
+      <h3 class="leaderboard-title">🏆 EQUIPOS</h3>
+      <ul id="teams-list" class="teams-ranking">
+        <li class="empty-notice">Esperando equipos...</li>
+      </ul>
+      <div class="ad-slot tv-ad">Publicidad / Patrocinio</div>
     </aside>
   </main>
 
-  <!-- Pantalla 3: Podio Final -->
-  <main id="tv-podium" class="tv-container hidden">
-    <h1 class="tv-logo" style="margin-bottom:24px;">🏆 PODIO FINAL 🏆</h1>
-    <div id="podium-places" class="podium-grid"></div>
-    <button onclick="window.location.reload()" class="btn btn-primary" style="margin-top:28px;">🔄 NUEVA SALA</button>
-  </main>
-
-  <script src="/socket.io/socket.io.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="/tv/tv.js"></script>
 </body>
 </html>

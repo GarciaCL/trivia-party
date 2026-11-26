@@ -1,99 +1,66 @@
 export const GameState = {
-  roomPin: String(Math.floor(1000 + Math.random() * 9000)),
-  phase: 'lobby', // 'lobby' | 'playing' | 'buzzed' | 'result' | 'podium'
-  mode: 'auto',   // 'auto' | 'host'
-  category: 'all', // 'all' | 'music' | 'movie'
-  hostTeamId: null,
-  hostVotes: {},  // { voterTeamId: targetTeamId }
-  teams: {},      // { socketId: { id, name, score, avatar } }
-  currentItem: null,
-  buzzedTeamId: null,
-  lockedTeams: [],
-  roundCount: 0,
-
-  resetRoom() {
-    this.roomPin = String(Math.floor(1000 + Math.random() * 9000));
-    this.phase = 'lobby';
-    this.mode = 'auto';
-    this.category = 'all';
-    this.hostTeamId = null;
-    this.hostVotes = {};
-    this.teams = {};
-    this.currentItem = null;
-    this.buzzedTeamId = null;
-    this.lockedTeams = [];
-    this.roundCount = 0;
-  },
-
-  addTeam(socketId, name) {
-    this.teams[socketId] = {
-      id: socketId,
-      name: name.trim().slice(0, 18),
-      score: 0
-    };
-    return this.teams[socketId];
-  },
-
-  removeTeam(socketId) {
-    delete this.teams[socketId];
-    delete this.hostVotes[socketId];
-    if (this.hostTeamId === socketId) {
-      this.hostTeamId = Object.keys(this.teams)[0] || null;
-    }
-    this.evaluateHostMajority();
-  },
-
-  castHostVote(voterId, targetId) {
-    if (!this.teams[voterId] || !this.teams[targetId]) return null;
-    this.hostVotes[voterId] = targetId;
-    return this.evaluateHostMajority();
-  },
-
-  evaluateHostMajority() {
-    const teamIds = Object.keys(this.teams);
-    if (teamIds.length === 0) {
-      this.hostTeamId = null;
+    state: {
+      teams: [],
+      currentItem: null,
+      lockedBy: null,
+      gameMode: 'auto', // 'auto' o 'host'
+      attemptedTeams: [] // IDs de equipos que ya fallaron en la ronda actual
+    },
+  
+    addTeam(id, name) {
+      const existing = this.state.teams.find(t => t.id === id);
+      if (existing) {
+        existing.name = name;
+        return existing;
+      }
+      const newTeam = { id, name, score: 0 };
+      this.state.teams.push(newTeam);
+      return newTeam;
+    },
+  
+    removeTeam(id) {
+      this.state.teams = this.state.teams.filter(t => t.id !== id);
+      if (this.state.lockedBy?.id === id) {
+        this.state.lockedBy = null;
+      }
+    },
+  
+    startNewRound(item) {
+      this.state.currentItem = item;
+      this.state.lockedBy = null;
+      this.state.attemptedTeams = [];
+    },
+  
+    lockBuzzer(teamId) {
+      // Si ya hay alguien respondiendo o el equipo ya intentó y falló, no puede pulsar
+      if (this.state.lockedBy !== null) return null;
+      if (this.state.attemptedTeams.includes(teamId)) return null;
+  
+      const team = this.state.teams.find(t => t.id === teamId);
+      if (team) {
+        this.state.lockedBy = team;
+        return team;
+      }
+      return null;
+    },
+  
+    registerFail(teamId) {
+      if (!this.state.attemptedTeams.includes(teamId)) {
+        this.state.attemptedTeams.push(teamId);
+      }
+      this.state.lockedBy = null;
+    },
+  
+    releaseBuzzer() {
+      this.state.lockedBy = null;
+    },
+  
+    updateScore(teamId, delta) {
+      const team = this.state.teams.find(t => t.id === teamId);
+      if (team) {
+        team.score = Math.max(0, team.score + delta); // No permitimos puntajes negativos
+        return team;
+      }
       return null;
     }
-    const tally = {};
-    Object.values(this.hostVotes).forEach(targetId => {
-      if (this.teams[targetId]) tally[targetId] = (tally[targetId] || 0) + 1;
-    });
-    const totalVotes = Object.keys(this.hostVotes).length;
-    const needed = Math.floor(teamIds.length / 2) + 1;
-
-    for (const [candidateId, count] of Object.entries(tally)) {
-      if (count >= needed || totalVotes >= teamIds.length) {
-        // Si todos votaron y hay empate, gana quien tenga más votos o el primero
-        const winner = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0];
-        if (winner) this.hostTeamId = winner;
-        break;
-      }
-    }
-    return this.hostTeamId;
-  },
-
-  startNewRound(item) {
-    this.phase = 'playing';
-    this.currentItem = item;
-    this.buzzedTeamId = null;
-    this.lockedTeams = [];
-    this.roundCount += 1;
-  },
-
-  getPublicState() {
-    const tally = {};
-    Object.values(this.hostVotes).forEach(t => { tally[t] = (tally[t] || 0) + 1; });
-    return {
-      roomPin: this.roomPin,
-      phase: this.phase,
-      mode: this.mode,
-      category: this.category,
-      hostTeamId: this.hostTeamId,
-      hostVotesTally: tally,
-      teams: Object.values(this.teams).sort((a, b) => b.score - a.score),
-      buzzedTeam: this.buzzedTeamId ? this.teams[this.buzzedTeamId] : null,
-      roundCount: this.roundCount
-    };
-  }
-};
+  };
