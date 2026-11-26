@@ -266,5 +266,27 @@ socket.on('game:podium', ({ ranking }) => {
   document.getElementById('locked-icon').textContent = pos === 1 ? '🏆' : '🎊';
   document.getElementById('locked-msg').textContent = pos > 0 ? `Puesto #${pos}` : '¡Juego Terminado!';
   document.getElementById('locked-team-name').textContent = 'Mira el podio en la TV.';
+  const btnBack = document.getElementById('btn-back-to-lobby');
+  if (btnBack) {
+    if (currentState?.hostTeamId === myTeam?.id) btnBack.classList.remove('hidden');
+    else btnBack.classList.add('hidden');
+  }
   setGameZone(lockedBanner);
+});
+
+document.getElementById('btn-leave-room')?.addEventListener('click', () => {
+  socket.emit('team:leave');
+  myTeam = null;
+  setMainView(loginView);
+});
+
+document.getElementById('btn-back-to-lobby')?.addEventListener('click', () => {
+  socket.emit('host:reset_lobby');
+});
+
+socket.on('game:back_to_lobby', () => {
+  clearInterval(answerTimer);
+  document.getElementById('btn-back-to-lobby')?.classList.add('hidden');
+  setBuzzerState(false, 'ESPERA...', 'Esperando que inicie la ronda...');
+  if (currentState) syncState(currentState);
 });

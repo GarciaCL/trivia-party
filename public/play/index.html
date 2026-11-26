@@ -29,7 +29,10 @@
   <section id="lobby-vote-view" class="play-view hidden">
     <header class="team-bar glass-card">
       <span id="lobby-team-display">Equipo</span>
-      <span id="lobby-pin-display" class="team-score">PIN: ----</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span id="lobby-pin-display" class="team-score">PIN: ----</span>
+        <button type="button" id="btn-leave-room" class="btn" style="padding:4px 10px; font-size:0.75rem; background:rgba(255,255,255,0.15); color:#fff;">🚪 Salir</button>
+      </div>
     </header>
 
     <div class="glass-card" style="padding: 18px; width: 100%; margin: 12px 0; text-align: left;">
@@ -101,6 +104,7 @@
       <p id="locked-icon" style="font-size: 3rem; margin-bottom: 10px;">🔒</p>
       <h2 id="locked-msg" style="color: var(--neon-yellow); margin-bottom: 8px;">¡Turno Bloqueado!</h2>
       <p id="locked-team-name" style="color: var(--text-muted);">Otro equipo está respondiendo...</p>
+      <button type="button" id="btn-back-to-lobby" class="btn btn-join hidden" style="margin-top: 16px; width: 100%;">🔄 VOLVER A CONFIGURAR PARTIDA</button>
     </div>
 
     <!-- 4 Opciones 2x2 -->

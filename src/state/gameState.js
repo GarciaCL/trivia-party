@@ -11,6 +11,25 @@ export const GameState = {
   lockedTeams: [],
   roundCount: 0,
 
+  resetToLobby(newPin = false) {
+    if (newPin) {
+      this.roomPin = String(Math.floor(1000 + Math.random() * 9000));
+    }
+    this.phase = 'lobby';
+    this.mode = 'auto';
+    this.category = 'all';
+    this.hostVotes = {};
+    this.currentItem = null;
+    this.buzzedTeamId = null;
+    this.lockedTeams = [];
+    this.roundCount = 0;
+    Object.values(this.teams).forEach(t => {
+      t.score = 0;
+    });
+    const teamIds = Object.keys(this.teams);
+    this.hostTeamId = teamIds[0] || null;
+  },
+
   addTeam(socketId, name) {
     this.teams[socketId] = {
       id: socketId,
@@ -29,11 +48,16 @@ export const GameState = {
     if (this.hostTeamId === socketId) {
       this.hostTeamId = Object.keys(this.teams)[0] || null;
     }
-    this.evaluateHostMajority();
+    if (Object.keys(this.teams).length === 0) {
+      this.resetToLobby(false);
+    } else {
+      this.evaluateHostMajority();
+    }
   },
 
   castHostVote(voterId, targetId) {
     if (!this.teams[voterId] || !this.teams[targetId]) return null;
+    // Permite cambiar de voto libremente en cualquier momento del lobby
     this.hostVotes[voterId] = targetId;
     return this.evaluateHostMajority();
   },
@@ -48,15 +72,9 @@ export const GameState = {
     Object.values(this.hostVotes).forEach(targetId => {
       if (this.teams[targetId]) tally[targetId] = (tally[targetId] || 0) + 1;
     });
-    const totalVotes = Object.keys(this.hostVotes).length;
-    const needed = Math.floor(teamIds.length / 2) + 1;
-
-    for (const [, count] of Object.entries(tally)) {
-      if (count >= needed || totalVotes >= teamIds.length) {
-        const winner = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0];
-        if (winner) this.hostTeamId = winner;
-        break;
-      }
+    const entries = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+    if (entries.length > 0) {
+      this.hostTeamId = entries[0][0];
     }
     return this.hostTeamId;
   },

@@ -175,7 +175,16 @@ socket.on('game:podium', ({ ranking }) => {
     html: top || 'Sin equipos',
     background: '#140533',
     color: '#fff',
-    confirmButtonText: 'Nueva Sala',
+    confirmButtonText: '🔄 Nueva Partida (Misma Sala)',
     confirmButtonColor: '#ff007f'
-  }).then(() => window.location.reload());
+  }).then(() => {
+    socket.emit('host:reset_lobby');
+  });
+});
+
+socket.on('game:back_to_lobby', () => {
+  ytPlayer?.stopVideo?.();
+  document.getElementById('buzzer-banner').classList.add('hidden');
+  document.getElementById('host-controls').classList.add('hidden');
+  document.getElementById('welcome-lobby').classList.remove('hidden');
 });
