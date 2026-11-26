@@ -8,6 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="stylesheet" href="/play/play.css">
+  <style>
+    .hidden { display: none !important; }
+  </style>
 </head>
 <body>
 
@@ -36,23 +39,22 @@
   </main>
 
   <!-- Pantalla 2: Sala de Espera (Votación de Anfitrión + Config del Anfitrión) -->
-  <main id="screen-lobby" class="play-container hidden">
+  <main id="screen-lobby" class="play-container hidden" style="padding: 16px; box-sizing: border-box;">
     <header class="player-header">
       <span id="lobby-team-badge" class="team-badge">Equipo</span>
       <span id="lobby-pin-badge" class="score-badge">PIN: ----</span>
     </header>
 
-    <!-- Votación por mayoría para elegir Anfitrión -->
-    <section class="glass-card" style="width:100%; padding:18px; margin-bottom:14px;">
+    <section class="glass-card" style="width:100%; padding:18px; margin-bottom:14px; box-sizing:border-box;">
       <h2 style="font-size:1.05rem; color:#00f0ff; margin-bottom:6px;">👑 ¿Quién controla el juego?</h2>
-      <p style="font-size:0.82rem; color:#e0d4fc; margin-bottom:12px;">Voten por mayoría quién tendrá el botón de siguiente ronda:</p>
+      <p style="font-size:0.82rem; color:#e0d4fc; margin-bottom:12px;">Toca un grupo para votar quién tendrá el botón de siguiente ronda:</p>
       <div id="host-vote-list" style="display:flex; flex-direction:column; gap:8px;"></div>
       <div id="host-chosen-banner" style="margin-top:12px; padding:10px; border-radius:10px; background:rgba(255,215,0,0.15); color:#ffd700; font-weight:800; font-size:0.88rem; text-align:center;">
         Esperando votos de los grupos...
       </div>
     </section>
 
-    <!-- Panel exclusivo del Anfitrión Elegido (botones excluyentes, modificables antes de iniciar) -->
+    <!-- Panel exclusivo del Anfitrión Elegido -->
     <section id="host-setup-card" class="glass-card hidden" style="width:100%; padding:18px; border:2px solid #ffd700; box-sizing:border-box;">
       <h2 style="font-size:1.05rem; color:#ffd700; margin-bottom:12px;">🎛️ Eres el Anfitrión — Configura la Partida</h2>
 
@@ -86,18 +88,19 @@
 
       <button id="btn-host-start-game" class="btn btn-primary" style="width:100%; box-sizing:border-box;">🚀 INICIAR PARTIDA</button>
     </section>
+  </main>
 
   <!-- Pantalla 3: Juego Activo -->
-  <main id="screen-game" class="play-container hidden">
+  <main id="screen-game" class="play-container hidden" style="padding: 16px; box-sizing: border-box;">
     <header class="player-header">
       <span id="header-team-name" class="team-badge">Equipo</span>
       <span id="header-team-score" class="score-badge">0 pts</span>
     </header>
 
-    <!-- Panel exclusivo del Anfitrión durante la partida (invisible para los demás jugadores) -->
-    <section id="host-live-controls" class="glass-card hidden" style="width:100%; padding:12px; margin-bottom:12px; border:1px solid #ffd700; display:flex; flex-direction:column; gap:8px;">
-      <div style="font-size:0.78rem; color:#ffd700; font-weight:800; text-align:center;">👑 CONTROLES DE ANFITRIÓN</div>
-      <div id="host-judge-row" class="hidden" style="display:flex; gap:8px;">
+    <!-- Panel exclusivo del Anfitrión durante la partida -->
+    <section id="host-live-controls" class="glass-card hidden" style="width:100%; padding:12px; margin-bottom:12px; border:1px solid #ffd700; box-sizing:border-box;">
+      <div style="font-size:0.78rem; color:#ffd700; font-weight:800; text-align:center; margin-bottom:8px;">👑 CONTROLES DE ANFITRIÓN</div>
+      <div id="host-judge-row" class="hidden" style="display:flex; gap:8px; margin-bottom:8px;">
         <button id="btn-judge-ok" class="btn" style="flex:1; background:#00ff88; color:#0d0221; padding:10px;">✅ CORRECTO</button>
         <button id="btn-judge-fail" class="btn" style="flex:1; background:#ff2a5f; color:#fff; padding:10px;">❌ INCORRECTO</button>
       </div>
@@ -107,7 +110,7 @@
       </div>
     </section>
 
-    <!-- Vista Buzzer (Inicia DESHABILITADO hasta que empiece la ronda) -->
+    <!-- Vista Buzzer -->
     <section id="view-buzzer" class="game-zone">
       <button id="btn-buzzer" class="buzzer-btn" disabled style="opacity:0.4; cursor:not-allowed;">
         <span>ESPERA...</span>
@@ -115,7 +118,7 @@
       <p id="buzzer-hint" class="hint-text">Esperando que inicie la ronda en la TV...</p>
     </section>
 
-    <!-- Vista 4 Opciones (Mantiene tus clases originales .opt-orange, .opt-cyan, .opt-yellow, .opt-pink) -->
+    <!-- Vista 4 Opciones -->
     <section id="view-options" class="game-zone hidden">
       <h2 class="prompt-title">¡ELIGE TU RESPUESTA!</h2>
       <div id="options-grid" class="options-grid">

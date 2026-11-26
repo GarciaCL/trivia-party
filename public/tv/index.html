@@ -9,6 +9,23 @@
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="stylesheet" href="/tv/tv.css">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    .audio-hidden { display: none !important; }
+    .tv-stage-layout {
+      min-height: 100vh; display: flex; flex-direction: column;
+      justify-content: space-between; align-items: center; padding: 28px 40px; box-sizing: border-box;
+    }
+    .tv-header-bar {
+      width: 100%; max-width: 1200px; display: flex;
+      justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
+    }
+    .score-chip {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(0,240,255,0.3);
+      padding: 8px 16px; border-radius: 12px; display: inline-flex; gap: 10px; align-items: center;
+      font-size: 1.05rem;
+    }
+    .score-chip strong { color: #ffd700; font-size: 1.2rem; }
+  </style>
 </head>
 <body>
 
@@ -23,7 +40,6 @@
     </header>
 
     <div style="display:grid; grid-template-columns: 340px 1fr; gap:28px; width:100%; max-width:1200px; align-items:stretch;">
-      <!-- Columna QR y Enlace -->
       <section class="glass-card" style="padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
         <p style="font-weight:800; color:#00f0ff; margin-bottom:12px;">1. ESCANEA PARA ENTRAR</p>
         <div style="background:#fff; padding:14px; border-radius:16px; margin-bottom:14px; min-width:238px; min-height:238px; display:flex; align-items:center; justify-content:center;">
@@ -35,20 +51,17 @@
         </p>
       </section>
 
-      <!-- Columna Equipos, Votos de Anfitrión y Configuración Remota -->
       <section class="glass-card" style="padding:26px; display:flex; flex-direction:column; justify-content:space-between;">
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px;">
             <h2 style="color:#ffd700; font-size:1.25rem; margin:0;">2. GRUPOS CONECTADOS Y VOTO DE ANFITRIÓN</h2>
             <span id="tv-teams-count" class="score-badge" style="white-space:nowrap;">0 equipos</span>
           </div>
-
           <div id="tv-lobby-teams" style="display:flex; flex-wrap:wrap; gap:12px; min-height:90px; margin-bottom:20px;">
             <p style="color:#9a8c98;">Esperando que los jugadores escaneen el código QR...</p>
           </div>
         </div>
 
-        <!-- Estado sincronizado de lo que elige el Anfitrión en su celular -->
         <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(0,240,255,0.25); border-radius:14px; padding:16px; display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; text-align:center;">
           <div>
             <div style="font-size:0.78rem; color:#c7b8ea;">👑 ANFITRIÓN</div>
@@ -68,35 +81,41 @@
   </main>
 
   <!-- Pantalla 2: Juego Activo -->
-  <main id="tv-stage" class="tv-container hidden">
-    <header class="tv-topbar">
-      <div class="round-pill" id="tv-round-label">RONDA 1</div>
-      <div id="tv-scoreboard" class="tv-scoreboard"></div>
+  <main id="tv-stage" class="tv-stage-layout hidden">
+    <header class="tv-header-bar">
+      <div class="round-pill" id="tv-round-label" style="background:#ff007f; padding:10px 22px; border-radius:999px; font-weight:900; font-size:1.2rem;">RONDA 1</div>
+      <div id="tv-scoreboard" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
     </header>
 
-    <section class="stage-center">
-      <div id="yt-wrapper" class="yt-box audio-hidden">
+    <section style="flex:1; width:100%; max-width:900px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:24px;">
+      <!-- Reproductor YouTube (Oculto en modo canción para no revelar la carátula) -->
+      <div id="yt-wrapper" class="audio-hidden" style="width:100%; max-width:720px; aspect-ratio:16/9; border-radius:20px; overflow:hidden; box-shadow:0 0 40px rgba(0,240,255,0.3); background:#000;">
         <div id="yt-player"></div>
       </div>
 
-      <div id="audio-visualizer" class="audio-wave-card">
-        <div class="wave-bars">
+      <!-- Visualizador de Audio cuando es Canción -->
+      <div id="audio-visualizer" class="glass-card" style="padding:48px 36px; width:100%; max-width:720px;">
+        <div class="wave-bars" style="margin-bottom:20px;">
           <span></span><span></span><span></span><span></span><span></span>
         </div>
-        <h2 id="stage-prompt-text">🎵 ¡ESCUCHA Y PRESIONA TU TIMBRE!</h2>
+        <h2 id="stage-prompt-text" style="font-size:2rem; color:#00f0ff;">🎵 ¡ESCUCHA Y PRESIONA TU TIMBRE!</h2>
       </div>
 
-      <div id="buzzed-banner" class="buzzed-overlay hidden">
-        <span class="buzzed-tag">⚡ ¡TIMBRE ACTIVADO!</span>
-        <h2 id="buzzed-team-name">Nombre Equipo</h2>
+      <!-- Banner de Equipo que tocó el Timbre -->
+      <div id="buzzed-banner" class="glass-card hidden" style="padding:28px 44px; border:3px solid #ffd700; background:rgba(20,5,51,0.95);">
+        <span style="color:#00f0ff; font-weight:900; letter-spacing:2px;">⚡ ¡TIMBRE ACTIVADO!</span>
+        <h2 id="buzzed-team-name" style="font-size:2.6rem; color:#ffd700; margin-top:8px;">Nombre Equipo</h2>
       </div>
 
-      <div id="reveal-card" class="glass-card reveal-box hidden">
-        <h3 id="reveal-status-text">¡CORRECTO!</h3>
-        <h2 id="reveal-song-title">Título del Tema</h2>
-        <p style="font-size:0.9rem; color:#00f0ff; margin-top:8px;">Esperando que el anfitrión pulse Siguiente Ronda en su celular...</p>
+      <!-- Revelación de Respuesta -->
+      <div id="reveal-card" class="glass-card hidden" style="padding:24px 36px; width:100%; max-width:720px; border:2px solid #00ff88;">
+        <h3 id="reveal-status-text" style="color:#00ff88; font-size:1.3rem;">¡CORRECTO!</h3>
+        <h2 id="reveal-song-title" style="font-size:1.9rem; margin-top:6px;">Título del Tema</h2>
+        <p style="font-size:0.95rem; color:#00f0ff; margin-top:10px;">Esperando que el anfitrión pulse Siguiente Ronda en su celular...</p>
       </div>
     </section>
+
+    <div style="height:10px;"></div>
   </main>
 
   <!-- Pantalla 3: Podio Final -->
