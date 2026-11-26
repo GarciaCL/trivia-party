@@ -14,7 +14,7 @@
 
   <!-- Pantalla 1: Lobby con PIN, QR, Votación de Anfitrión y Config en Vivo -->
   <main id="tv-lobby" class="tv-container">
-    <header style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:1200px; margin-bottom:20px;">
+    <header style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:1200px; margin-bottom:20px; gap:20px; flex-wrap:wrap;">
       <h1 class="tv-logo" style="font-size:2.4rem;">🎉 TRIVIA PARTY</h1>
       <div class="glass-card" style="padding:10px 22px; display:flex; align-items:center; gap:14px;">
         <span style="font-size:0.95rem; color:#e0d4fc;">PIN DE SALA:</span>
@@ -26,18 +26,21 @@
       <!-- Columna QR y Enlace -->
       <section class="glass-card" style="padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
         <p style="font-weight:800; color:#00f0ff; margin-bottom:12px;">1. ESCANEA PARA ENTRAR</p>
-        <div style="background:#fff; padding:14px; border-radius:16px; margin-bottom:14px;">
+        <div style="background:#fff; padding:14px; border-radius:16px; margin-bottom:14px; min-width:238px; min-height:238px; display:flex; align-items:center; justify-content:center;">
           <img id="tv-qr-img" src="" alt="Código QR Sala" style="width:210px; height:210px; display:block;">
         </div>
-        <p style="font-size:0.85rem; color:#e0d4fc;">O entra a:<br><strong id="tv-join-url" style="color:#fff;"></strong></p>
+        <p style="font-size:0.85rem; color:#e0d4fc; line-height:1.5;">
+          O entra a:<br>
+          <strong id="tv-join-url" style="color:#fff; font-size:0.95rem;"></strong>
+        </p>
       </section>
 
       <!-- Columna Equipos, Votos de Anfitrión y Configuración Remota -->
       <section class="glass-card" style="padding:26px; display:flex; flex-direction:column; justify-content:space-between;">
         <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <h2 style="color:#ffd700; font-size:1.3rem;">2. GRUPOS CONECTADOS Y VOTO DE ANFITRIÓN</h2>
-            <span id="tv-teams-count" class="score-badge">0 equipos</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px;">
+            <h2 style="color:#ffd700; font-size:1.25rem; margin:0;">2. GRUPOS CONECTADOS Y VOTO DE ANFITRIÓN</h2>
+            <span id="tv-teams-count" class="score-badge" style="white-space:nowrap;">0 equipos</span>
           </div>
 
           <div id="tv-lobby-teams" style="display:flex; flex-wrap:wrap; gap:12px; min-height:90px; margin-bottom:20px;">
@@ -72,12 +75,10 @@
     </header>
 
     <section class="stage-center">
-      <!-- Reproductor YouTube -->
       <div id="yt-wrapper" class="yt-box audio-hidden">
         <div id="yt-player"></div>
       </div>
 
-      <!-- Visualizador de Audio cuando es Canción -->
       <div id="audio-visualizer" class="audio-wave-card">
         <div class="wave-bars">
           <span></span><span></span><span></span><span></span><span></span>
@@ -85,13 +86,11 @@
         <h2 id="stage-prompt-text">🎵 ¡ESCUCHA Y PRESIONA TU TIMBRE!</h2>
       </div>
 
-      <!-- Banner de Equipo que tocó el Timbre -->
       <div id="buzzed-banner" class="buzzed-overlay hidden">
         <span class="buzzed-tag">⚡ ¡TIMBRE ACTIVADO!</span>
         <h2 id="buzzed-team-name">Nombre Equipo</h2>
       </div>
 
-      <!-- Revelación de Respuesta -->
       <div id="reveal-card" class="glass-card reveal-box hidden">
         <h3 id="reveal-status-text">¡CORRECTO!</h3>
         <h2 id="reveal-song-title">Título del Tema</h2>
@@ -107,6 +106,7 @@
     <button onclick="window.location.reload()" class="btn btn-primary" style="margin-top:28px;">🔄 NUEVA SALA</button>
   </main>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script type="module" src="/tv/tv.js"></script>
 </body>
