@@ -58,7 +58,6 @@ export function initGameSockets(io) {
       await triggerNextRound(category);
     });
 
-    // Buzzer protegido: solo responde si la ronda está activa ('playing')
     socket.on('team:buzz', () => {
       if (GameState.phase !== 'playing' || !GameState.currentItem) return;
       if (!GameState.teams[socket.id]) return;
@@ -150,27 +149,26 @@ export function initGameSockets(io) {
       io.emit('game:podium', { ranking });
     });
 
+    socket.on('host:reset_lobby', () => {
+      const isTv = !GameState.teams[socket.id];
+      if (!isTv && socket.id !== GameState.hostTeamId) return;
+      GameState.resetToLobby(false);
+      io.emit('state:sync', GameState.getPublicState());
+      io.emit('game:back_to_lobby');
+    });
+
+    socket.on('team:leave', () => {
+      if (GameState.teams[socket.id]) {
+        GameState.removeTeam(socket.id);
+        io.emit('state:sync', GameState.getPublicState());
+      }
+    });
+
     socket.on('disconnect', () => {
       if (GameState.teams[socket.id]) {
         GameState.removeTeam(socket.id);
         io.emit('state:sync', GameState.getPublicState());
       }
     });
-  });
-  // Volver al lobby manteniendo los equipos conectados (sin recargar ni re-escanear QR)
-  socket.on('host:reset_lobby', () => {
-    const isTv = !GameState.teams[socket.id];
-    if (!isTv && socket.id !== GameState.hostTeamId) return;
-    GameState.resetToLobby(false);
-    io.emit('state:sync', GameState.getPublicState());
-    io.emit('game:back_to_lobby');
-  });
-
-  // Salir volontariamente de la sala desde el celular
-  socket.on('team:leave', () => {
-    if (GameState.teams[socket.id]) {
-      GameState.removeTeam(socket.id);
-      io.emit('state:sync', GameState.getPublicState());
-    }
   });
 }
