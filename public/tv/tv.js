@@ -4,6 +4,7 @@ let ytPlayer = null;
 let playerReady = false;
 let pendingItem = null;
 let gameStarted = false;
+let currentItemType = 'music';
 
 const tvLobby = document.getElementById('tv-lobby');
 const tvStage = document.getElementById('tv-stage');
@@ -37,6 +38,7 @@ window.onYouTubeIframeAPIReady = createYTPlayer;
 if (window.YT?.Player) createYTPlayer();
 
 function playMediaItem(item) {
+  currentItemType = item.type || 'music';
   if (!playerReady || !ytPlayer?.loadVideoById) {
     pendingItem = item;
     createYTPlayer();
@@ -44,13 +46,16 @@ function playMediaItem(item) {
   }
   const ytWrapper = document.getElementById('yt-wrapper');
   const visualizer = document.getElementById('audio-visualizer');
+  const eqBars = document.getElementById('eq-bars');
 
-  if (item.type === 'movie') {
+  if (currentItemType === 'movie') {
     ytWrapper.classList.remove('audio-hidden');
     visualizer.classList.add('hidden');
   } else {
+    // En canciones, el video permanece oculto toda la ronda
     ytWrapper.classList.add('audio-hidden');
     visualizer.classList.remove('hidden');
+    eqBars?.classList.remove('eq-paused');
   }
 
   ytPlayer.unMute();
@@ -69,7 +74,6 @@ function updateLobbyQR(pin) {
 socket.on('state:sync', (state) => {
   updateLobbyQR(state.roomPin);
 
-  // Actualizar Lobby
   document.getElementById('tv-teams-count').textContent = `${state.teams.length} equipo(s)`;
   const lobbyList = document.getElementById('tv-lobby-teams');
   lobbyList.innerHTML = state.teams.length
@@ -90,14 +94,17 @@ socket.on('state:sync', (state) => {
   document.getElementById('tv-mode-badge').textContent = MODE_LABELS[state.mode] || state.mode;
   document.getElementById('tv-cat-badge').textContent = CAT_LABELS[state.category] || state.category;
 
-  // Actualizar marcador superior durante el juego
+  // Renderizar barra lateral derecha de equipos y puntajes
   document.getElementById('tv-round-label').textContent = `RONDA ${state.roundCount}`;
-  document.getElementById('tv-scoreboard').innerHTML = state.teams.map(t => `
-    <div class="score-chip">
-      <span>${t.id === state.hostTeamId ? '👑 ' : ''}${t.name}</span>
-      <strong>${t.score}</strong>
-    </div>
-  `).join('');
+  document.getElementById('tv-scoreboard').innerHTML = state.teams.map((t, idx) => {
+    const isBuzzed = state.buzzedTeam?.id === t.id;
+    return `
+      <div class="sidebar-team-card ${isBuzzed ? 'active-buzz' : ''}">
+        <span style="font-weight:800; color:#fff;">#${idx + 1} ${t.id === state.hostTeamId ? '👑 ' : ''}${t.name}</span>
+        <strong style="color:#ffd700; font-size:1.25rem;">${t.score}</strong>
+      </div>
+    `;
+  }).join('');
 });
 
 socket.on('round:new', ({ item }) => {
@@ -108,6 +115,7 @@ socket.on('round:new', ({ item }) => {
 
   document.getElementById('buzzed-banner').classList.add('hidden');
   document.getElementById('reveal-card').classList.add('hidden');
+  document.getElementById('tv-category-pill').textContent = item.type === 'movie' ? '🎬 MODO VIDEO' : '🎵 MODO AUDIO';
   document.getElementById('stage-prompt-text').textContent = item.type === 'movie'
     ? '🎬 ¡ADIVINA LA PELÍCULA O SERIE!'
     : '🎵 ¡ESCUCHA Y PRESIONA TU TIMBRE!';
@@ -117,25 +125,38 @@ socket.on('round:new', ({ item }) => {
 
 socket.on('round:buzzed', ({ team }) => {
   ytPlayer?.pauseVideo?.();
+  document.getElementById('eq-bars')?.classList.add('eq-paused');
   document.getElementById('buzzed-team-name').textContent = team.name;
   document.getElementById('buzzed-banner').classList.remove('hidden');
 });
 
 socket.on('round:steal', () => {
   document.getElementById('buzzed-banner').classList.add('hidden');
+  document.getElementById('eq-bars')?.classList.remove('eq-paused');
   ytPlayer?.playVideo?.();
 });
 
 socket.on('round:result', ({ correct, team, item }) => {
   document.getElementById('buzzed-banner').classList.add('hidden');
-  document.getElementById('yt-wrapper').classList.remove('audio-hidden');
-  document.getElementById('audio-visualizer').classList.add('hidden');
+
+  // Solo mostrar el video si es Película/Serie; si es Canción, mantener video oculto y animar ecualizador
+  if (currentItemType === 'movie') {
+    document.getElementById('yt-wrapper').classList.remove('audio-hidden');
+    document.getElementById('audio-visualizer').classList.add('hidden');
+  } else {
+    document.getElementById('yt-wrapper').classList.add('audio-hidden');
+    document.getElementById('audio-visualizer').classList.remove('hidden');
+    document.getElementById('eq-bars')?.classList.remove('eq-paused');
+  }
 
   const revealCard = document.getElementById('reveal-card');
-  document.getElementById('reveal-status-text').textContent = correct
+  const statusText = document.getElementById('reveal-status-text');
+  statusText.style.color = correct ? '#00ff88' : '#ff4d6d';
+  statusText.textContent = correct
     ? `🎉 ¡PUNTO PARA ${team.name.toUpperCase()}!`
     : '😢 ¡NADIE ACERTÓ!';
   document.getElementById('reveal-song-title').textContent = item.title;
+  revealCard.style.borderColor = correct ? '#00ff88' : '#ff4d6d';
   revealCard.classList.remove('hidden');
 
   if (ytPlayer?.seekTo) {
